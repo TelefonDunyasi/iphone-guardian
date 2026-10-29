@@ -1,4 +1,4 @@
-# iPhone Guardian v0.4
+# iPhone Guardian v0.6
 
 Privacy-first iPhone security guide prototype.
 
@@ -10,6 +10,6 @@ Privacy-first iPhone security guide prototype.
 5. Use Share → Add to Home Screen.
 
 ## Honest capability statement
-This is an installable web app prototype, not a native iOS security scanner. It does not scan the iPhone, inspect other apps, read WhatsApp messages, or detect spyware. Checklist data is stored in browser local storage. Premium is a preview and does not take payments.
+This is an installable web app prototype, not a native iOS security scanner. It does not scan the iPhone, inspect other apps, read WhatsApp messages, or detect spyware. Checklist data is stored in browser local storage. The checklist supports search and status filters. Premium is a preview and does not take payments.
 
 A native SwiftUI App Store build requires an Apple-supported build workflow, normally Xcode on a Mac, and applicable Apple Developer distribution membership.
