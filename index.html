@@ -16,6 +16,18 @@
  <form id="urlCheckForm" class="urlcheck-form"><input id="urlCheckInput" class="urlcheck-input" type="url" inputmode="url" autocomplete="url" maxlength="2048" placeholder="https://ornek.com" aria-label="Kontrol edilecek web adresi" required><button id="urlCheckButton" class="urlcheck-submit" type="submit">Bağlantıyı kontrol et</button></form>
  <p id="urlCheckStatus" class="urlcheck-status" role="status" aria-live="polite">Kontrol için Guardian hesabınla giriş yapmalısın.</p><div id="urlCheckResult" class="urlcheck-result" aria-live="polite"></div><p class="urlcheck-meta">Önemli: PhishTank eşleşmesi bulunmaması güvenlik garantisi değildir. PhishTank servisi yanıt vermezse yalnızca yerel adres analizi gösterilir. URL kontrol amacıyla üçüncü taraf PhishTank servisine gönderilir.</p>
 </section>
+
+<section class="urlcheck-card" id="messageGuard" aria-labelledby="messageGuardTitle">
+ <div class="eyebrow">MESAJ DOLANDIRICILIĞI ANALİZİ · CİHAZ İÇİNDE</div>
+ <h3 id="messageGuardTitle">Şüpheli SMS veya mesajı incele</h3>
+ <p>SMS, WhatsApp veya e-postadaki şüpheli metni buraya yapıştır. Analiz bu sayfada cihazında yapılır; metin sunucuya gönderilmez.</p>
+ <form id="messageGuardForm" class="urlcheck-form">
+  <textarea id="messageGuardInput" class="urlcheck-input" rows="5" maxlength="8000" placeholder="Şüpheli mesajın metnini buraya yapıştır…" aria-label="İncelenecek mesaj metni" required></textarea>
+  <button id="messageGuardButton" class="urlcheck-submit" type="submit">Mesajı analiz et</button>
+ </form>
+ <div id="messageGuardResult" class="urlcheck-result" aria-live="polite"></div>
+ <p class="urlcheck-meta">Gizlilik: Mesaj metni bu analiz için herhangi bir servise gönderilmez. Bu özellik sezgisel dolandırıcılık işaretlerini arar; kesin teşhis veya güvenlik garantisi değildir.</p>
+</section>
 <section class="card dashboard" aria-labelledby="dashTitle">
   <div class="dashboard-head"><div><div class="eyebrow">GUARDIAN INSIGHTS</div><h3 id="dashTitle">Güvenlik durumun</h3><p class="muted">Kontrol listendeki ilerlemenin özeti</p></div><span class="dash-mark">✦</span></div>
   <div class="dash-stats"><div class="dash-stat"><strong id="dashDone">0</strong><span>Tamamlanan</span></div><div class="dash-stat"><strong id="dashPending">13</strong><span>Bekleyen</span></div><div class="dash-stat"><strong id="dashPercent">0%</strong><span>İlerleme</span></div></div>
@@ -167,4 +179,41 @@ el("close").onclick=()=>el("modal").classList.remove("show");el("modal").onclick
 el("taskSearch").addEventListener("input",e=>{searchTerm=e.target.value.trim();applyTaskView()});document.querySelectorAll("[data-filter]").forEach(b=>b.addEventListener("click",()=>{activeFilter=b.dataset.filter;document.querySelectorAll("[data-filter]").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));applyTaskView()}));
 let english=false;el("lang").onclick=()=>{english=!english;el("headline").textContent=english?"Safer habits for your iPhone.":"iPhone’un için daha güvenli alışkanlıklar.";el("intro").textContent=english?"Complete your checklist and learn practical security steps.":"Kontrol listeni tamamla, güvenlik adımlarını öğren ve ilerlemeni takip et.";};
 if("serviceWorker"in navigator&&location.protocol.startsWith("http"))addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
-</script></body></html>
+</script>
+<script>
+(()=>{
+ const form=document.getElementById("messageGuardForm");
+ if(!form)return;
+ const input=document.getElementById("messageGuardInput");
+ const result=document.getElementById("messageGuardResult");
+ const button=document.getElementById("messageGuardButton");
+ const patterns=[
+  {points:25,regex:/şifreni|parolanı|password|şifre.{0,20}(güncelle|yenile|doğrula)|hesab.{0,20}(askıya|kapatıl|kilitlen)/i,label:"Hesap veya parola bilgisi isteniyor."},
+  {points:25,regex:/sms kodu|doğrulama kodu|tek kullanımlık kod|otp|güvenlik kodu|kart bilg|cvv|iban/i,label:"Doğrulama kodu veya hassas finansal bilgi talep ediliyor."},
+  {points:20,regex:/hemen|acil|son dakika|24 saat|bugün son|derhal|askıya alınacak|erişiminiz kesilecek/i,label:"Acele ettirme veya tehdit dili kullanılıyor."},
+  {points:20,regex:/ödül|kazandınız|çekiliş|hediye|bedava|iade|geri ödeme|kargonuz bekliyor|teslimat/i,label:"Ödül, iade veya teslimat bahanesi kullanılıyor."},
+  {points:20,regex:/havale|eft|para gönder|ön ödeme|kapora|yatırım fırsatı|garantili kazanç/i,label:"Para transferi veya olağan dışı kazanç vaadi içeriyor."},
+  {points:15,regex:/polis|savcı|mahkeme|vergi dairesi|banka güvenlik|müşteri hizmetleri/i,label:"Resmî kurum veya banka kimliğine bürünme ihtimali var."}
+ ];
+ form.addEventListener("submit",e=>{
+  e.preventDefault();
+  const text=input.value.trim();
+  if(!text){result.className="urlcheck-result show neutral";result.textContent="Önce incelemek istediğin mesajı yapıştır.";return}
+  const found=patterns.filter(p=>p.regex.test(text));
+  let score=Math.min(100,found.reduce((n,p)=>n+p.points,0));
+  const links=(text.match(/https?:\/\/[^\s<>()]+|www\.[^\s<>()]+/gi)||[]);
+  if(links.length){score=Math.min(100,score+15);found.push({label:"Mesajda bağlantı bulunuyor. Açmadan önce bağlantıyı ayrıca kontrol et."})}
+  const heading=document.createElement("strong");
+  const para=document.createElement("p");
+  para.style.margin="7px 0 0";
+  if(score>=50){result.className="urlcheck-result show danger";heading.textContent="YÜKSEK DİKKAT GEREKTİREN İŞARETLER";para.textContent="Mesajı göndereni bağımsız bir kanaldan doğrulamadan bağlantıya dokunma, kod veya para paylaşma."}
+  else if(score>0){result.className="urlcheck-result show neutral";heading.textContent="ŞÜPHELİ OLABİLECEK İŞARETLER";para.textContent="Mesajı dikkatle incele. Özellikle kişisel bilgi, doğrulama kodu veya ödeme talebine karşı temkinli ol."}
+  else{result.className="urlcheck-result show safe";heading.textContent="BELİRGİN DOLANDIRICILIK KALIBI BULUNMADI";para.textContent="Bu, mesajın güvenli olduğunu kanıtlamaz. Dil kalıplarıyla yapılan otomatik inceleme her dolandırıcılığı yakalayamaz."}
+  result.replaceChildren(heading,para);
+  if(found.length){const ul=document.createElement("ul");ul.style.margin="9px 0 0";ul.style.paddingLeft="20px";found.forEach(item=>{const li=document.createElement("li");li.textContent=item.label;ul.appendChild(li)});result.appendChild(ul)}
+  const meta=document.createElement("div");meta.className="urlcheck-meta";meta.textContent="Sezgisel işaret puanı: "+score+"/100 · Metin cihazında incelendi; sunucuya gönderilmedi.";result.appendChild(meta);
+ });
+})();
+</script>
+
+</body></html>
