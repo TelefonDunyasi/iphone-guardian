@@ -28,6 +28,18 @@
  <div id="messageGuardResult" class="urlcheck-result" aria-live="polite"></div>
  <p class="urlcheck-meta">Gizlilik: Mesaj metni bu analiz için herhangi bir servise gönderilmez. Bu özellik sezgisel dolandırıcılık işaretlerini arar; kesin teşhis veya güvenlik garantisi değildir.</p>
 </section>
+
+<section class="urlcheck-card" id="appAdvisor" aria-labelledby="appAdvisorTitle">
+ <div class="eyebrow">APP STORE UYGULAMA DANIŞMANI</div>
+ <h3 id="appAdvisorTitle">İndirmeden önce uygulamayı değerlendir</h3>
+ <p>Uygulamanın App Store bağlantısını veya tam adını gir. Guard, Apple mağaza kaydını, geliştiriciyi, puan ve yorum sayısını bulmaya çalışır.</p>
+ <form id="appAdvisorForm" class="urlcheck-form">
+  <input id="appAdvisorInput" class="urlcheck-input" type="text" maxlength="500" placeholder="Uygulama adı veya App Store bağlantısı" aria-label="Uygulama adı veya App Store bağlantısı" required>
+  <button id="appAdvisorButton" class="urlcheck-submit" type="submit">Uygulamayı değerlendir</button>
+ </form>
+ <div id="appAdvisorResult" class="urlcheck-result" aria-live="polite"></div>
+ <p class="urlcheck-meta">Sınır: Bu özellik App Store kayıt bilgilerini değerlendirir; uygulama dosyasını taramaz, telefondaki yüklü uygulamaları göremez ve casus yazılım tespit ettiğini iddia etmez. Yüksek puan veya App Store'da bulunmak tek başına güvenlik garantisi değildir.</p>
+</section>
 <section class="card dashboard" aria-labelledby="dashTitle">
   <div class="dashboard-head"><div><div class="eyebrow">GUARDIAN INSIGHTS</div><h3 id="dashTitle">Güvenlik durumun</h3><p class="muted">Kontrol listendeki ilerlemenin özeti</p></div><span class="dash-mark">✦</span></div>
   <div class="dash-stats"><div class="dash-stat"><strong id="dashDone">0</strong><span>Tamamlanan</span></div><div class="dash-stat"><strong id="dashPending">13</strong><span>Bekleyen</span></div><div class="dash-stat"><strong id="dashPercent">0%</strong><span>İlerleme</span></div></div>
@@ -212,6 +224,71 @@ if("serviceWorker"in navigator&&location.protocol.startsWith("http"))addEventLis
   result.replaceChildren(heading,para);
   if(found.length){const ul=document.createElement("ul");ul.style.margin="9px 0 0";ul.style.paddingLeft="20px";found.forEach(item=>{const li=document.createElement("li");li.textContent=item.label;ul.appendChild(li)});result.appendChild(ul)}
   const meta=document.createElement("div");meta.className="urlcheck-meta";meta.textContent="Sezgisel işaret puanı: "+score+"/100 · Metin cihazında incelendi; sunucuya gönderilmedi.";result.appendChild(meta);
+ });
+})();
+</script>
+
+
+<script>
+(()=>{
+ const form=document.getElementById("appAdvisorForm");
+ if(!form)return;
+ const input=document.getElementById("appAdvisorInput");
+ const button=document.getElementById("appAdvisorButton");
+ const result=document.getElementById("appAdvisorResult");
+ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+ form.addEventListener("submit",async e=>{
+  e.preventDefault();
+  const raw=input.value.trim();
+  if(!raw)return;
+  button.disabled=true;button.textContent="Mağaza bilgileri aranıyor…";
+  result.className="urlcheck-result show neutral";
+  result.textContent="Apple App Store kayıt bilgileri sorgulanıyor. Bu işlem uygulamanın kodunu taramaz.";
+  try{
+   const idMatch=raw.match(/(?:id|id=)(\d{5,})/i)||raw.match(/\/id(\d{5,})/i);
+   const endpoint=idMatch
+    ? "https://itunes.apple.com/lookup?id="+encodeURIComponent(idMatch[1])+"&country=tr"
+    : "https://itunes.apple.com/search?term="+encodeURIComponent(raw)+"&entity=software&country=tr&limit=8";
+   const response=await fetch(endpoint,{headers:{Accept:"application/json"},signal:AbortSignal.timeout(12000)});
+   if(!response.ok)throw new Error("Apple mağaza servisi HTTP "+response.status);
+   const data=await response.json();
+   if(!data.results||!data.results.length)throw new Error("Türkiye App Store kataloğunda eşleşme bulunamadı. Uygulama adını veya App Store bağlantısını kontrol et.");
+   const apps=data.results;
+   result.className="urlcheck-result show neutral";
+   result.replaceChildren();
+   const intro=document.createElement("p");
+   intro.textContent=apps.length===1?"Mağaza kaydı bulundu. Bilgileri kontrol et:":"Birden fazla eşleşme bulundu. Doğru uygulamayı seç:";
+   result.appendChild(intro);
+   apps.forEach(app=>{
+    const wrap=document.createElement("div");
+    wrap.style.cssText="border-top:1px solid #45617a;padding:12px 0;margin-top:10px";
+    const name=document.createElement("strong");name.textContent=app.trackName||"Adı belirtilmemiş uygulama";
+    const details=document.createElement("p");details.style.cssText="margin:6px 0;line-height:1.5";
+    const rating=Number(app.averageUserRating||0);
+    const count=Number(app.userRatingCount||0);
+    const age=app.contentAdvisoryRating||"Belirtilmemiş";
+    details.textContent="Geliştirici: "+(app.sellerName||app.artistName||"Belirtilmemiş")+" · Kategori: "+(app.primaryGenreName||"Belirtilmemiş")+" · Yaş derecesi: "+age+" · Puan: "+(count?rating.toFixed(1)+"/5 ("+count.toLocaleString("tr-TR")+" değerlendirme)":"Henüz yeterli puan bilgisi yok");
+    const warning=document.createElement("p");warning.style.cssText="margin:6px 0;font-size:12px;color:#f5d69a";
+    const signals=[];
+    if(count===0)signals.push("Kullanıcı değerlendirmesi bulunmuyor.");
+    else if(count<50)signals.push("Değerlendirme sayısı az; puan güvenilir bir ölçüt olmayabilir.");
+    if(count>=50&&rating>0&&rating<3)signals.push("Kullanıcı puanı düşük.");
+    if(!app.sellerName&&!app.artistName)signals.push("Geliştirici bilgisi net değil.");
+    warning.textContent=signals.length?signals.join(" "):"Mağaza kaydında temel geliştirici ve kullanıcı değerlendirme bilgileri mevcut.";
+    const verdict=document.createElement("p");verdict.style.cssText="margin:8px 0;font-weight:800;color:#aee7ef";
+    verdict.textContent="SONUÇ: Mağaza kaydı bulundu — güvenlik için ek inceleme gerekli.";
+    const link=document.createElement("a");link.href=app.trackViewUrl||"#";link.target="_blank";link.rel="noopener noreferrer";link.textContent="App Store sayfasını aç";link.style.cssText="display:inline-block;color:#7de8f0;margin-top:7px";
+    wrap.append(name,details,warning,verdict,link);
+    result.appendChild(wrap);
+   });
+   const note=document.createElement("p");note.className="urlcheck-meta";note.textContent="Kontrol kaynağı: Apple App Store kataloğu. Guard uygulama paketini, çalışma davranışını veya gizli veri erişimini incelemedi. İndirmeden önce geliştirici adını, gizlilik etiketlerini ve istediği izinleri ayrıca kontrol et.";
+   result.appendChild(note);
+  }catch(err){
+   result.className="urlcheck-result show neutral";
+   result.textContent=(err&&err.message?err.message:"Mağaza bilgileri alınamadı.")+" Bu durumda uygulamayı güvenli veya güvensiz olarak sınıflandırmıyoruz.";
+  }finally{
+   button.disabled=false;button.textContent="Uygulamayı değerlendir";
+  }
  });
 })();
 </script>
