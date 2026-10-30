@@ -1,35 +1,41 @@
 # iPhone Guardian
 
-Privacy-first iPhone security companion (installable web app / PWA).
+iPhone Guardian, iPhone kullanıcıları için Türkçe hazırlanmış, Safari üzerinden kurulabilen bir güvenlik rehberi ve kontrol listesi (PWA).
 
-## Current features
+## Bu sürümde bulunanlar
 
-- iPhone security checklist with search and status filters.
-- Local progress storage, plus optional Supabase account and cloud sync.
-- Practical guides for Apple Account, WhatsApp, privacy, lost-device preparation, iCloud backup, Security Checkup and configuration profiles.
-- Shareable checklist report.
-- Google Web Risk URL check through the authenticated Supabase Edge Function named `smooth-responder`.
+- iPhone güvenlik kontrol listesi, arama ve tamamlanan/bekleyen filtreleri.
+- İsteğe bağlı Supabase hesabı ve kullanıcının kendi ilerlemesini buluta eşitleme.
+- Apple Account, WhatsApp, gizlilik, kayıp cihaz hazırlığı, iCloud yedekleme, Security Checkup ve yapılandırma profilleri için pratik rehberler.
+- Paylaşılabilir kontrol listesi raporu.
+- Ücretsiz, cihaz içinde çalışan bağlantı adresi analizi. URL harici bir güvenlik servisine gönderilmez.
+- SMS/WhatsApp/e-posta metinleri için cihaz içinde çalışan sezgisel dolandırıcılık işaretleri analizi.
+- Apple App Store kataloğundan uygulama adı, geliştirici, kategori, yaş derecesi ve puan gibi herkese açık mağaza bilgilerinin görüntülenmesi.
 
-## Publish
+## Yayın ve iPhone'a kurulum
 
-GitHub Pages should publish the `main` branch from the repository root. The app entry point is `index.html`. Open the published Pages URL in Safari and use Share → Add to Home Screen.
+GitHub Pages, `main` dalının kök klasörünü yayınlar. Uygulamanın giriş dosyası `index.html` dosyasıdır.
 
-## Supabase setup
+1. https://telefondunyasi.github.io/iphone-guardian/ adresini iPhone'da Safari ile aç.
+2. Paylaş düğmesine dokun.
+3. Ana Ekrana Ekle seçeneğini kullan.
 
-See [AUTH_SETUP.md](AUTH_SETUP.md) for Auth, project URL, public publishable/anon key, email confirmation and the `guardian_progress` table with row-level security.
+## Supabase hesap ve eşitleme kurulumu
 
-For the URL checker:
+Supabase Auth ve `guardian_progress` tablosu kurulumu için [AUTH_SETUP.md](AUTH_SETUP.md) dosyasına bak. Tarayıcıda yalnızca proje URL'si ve public anon/publishable key bulunmalıdır. Service-role/secret key hiçbir zaman HTML veya GitHub'a eklenmemelidir. İlerleme tablosunda Row Level Security (RLS) açık tutulmalıdır.
 
-1. In Supabase Edge Function Secrets, set `WEBRISK_API_KEY` to the Google Web Risk API key. Keep it only in Supabase; never put it in browser code or GitHub.
-2. Deploy the source at `supabase/functions/smooth-responder/index.ts` as the Edge Function named `smooth-responder`.
-3. Keep JWT verification enabled. The app calls the function with the signed-in user's Supabase session. Do not disable authentication to hide 401 responses.
-4. The function permits the GitHub Pages origin `https://telefondunyasi.github.io` and accepts POST requests only.
-5. Test from the app after signing in. Opening the function URL directly in Safari sends an unauthenticated GET and is not a valid test.
+URL kontrolü artık Supabase Edge Function, Google Web Risk, PhishTank veya ücretli bir güvenlik API'si çağırmaz. Google Cloud faturalandırması veya API anahtarı gerekmez. Eski Edge Function dosyaları depoda kalmış olabilir; mevcut web uygulaması bunları çağırmaz.
 
-## Honest capability and privacy statement
+## Güvenlik ve gizlilik sınırları
 
-This is a web app, not a native iOS security scanner. It cannot scan the iPhone in the background, inspect other apps, read WhatsApp messages, or detect spyware. The URL checker queries Google Web Risk for selected threat-list matches; no match is not a safety guarantee and it does not prove a site is safe. The checklist score reflects only items the user marked complete.
+- Bu ürün yerel bir web uygulamasıdır; yerel iPhone uygulaması veya native iOS antivirüsü değildir.
+- iPhone'u arka planda tarayamaz, başka uygulamaların dosyalarını/izinlerini inceleyemez, WhatsApp mesajlarını okuyamaz ve casus yazılım tespit ettiğini iddia edemez.
+- Bağlantı kontrolü yalnızca URL'nin biçimsel özelliklerinde bazı risk işaretlerini arar. Bilinen zararlı URL/oltalama listelerini, sayfa içeriğini veya indirilen dosyaları taramaz. Risk işareti bulunmaması güvenlik garantisi değildir.
+- Mesaj analizi sezgisel metin kalıplarına dayanır; her dolandırıcılığı tespit edemez. Mesaj metni analiz için sunucuya gönderilmez.
+- App Store danışmanı Apple'ın herkese açık katalog verisini gösterir; uygulama paketini, kodunu, davranışını veya cihazdaki yüklü uygulamaları incelemez.
+- Kontrol listesi puanı yalnızca kullanıcının işaretlediği rehber maddelerini yansıtır; teknik cihaz taraması değildir.
+- Üyelik/ödeme alanı yalnızca önizlemedir. Premium satın alma, abonelik veya ödeme tahsilatı etkin değildir.
 
-The public Supabase browser key is intended for client use and is protected by database RLS. Never commit a Supabase secret/service-role key or Google Web Risk API key. Premium is a preview only; there is no payment or subscription system enabled.
+## App Store durumu
 
-A native App Store release requires a separate SwiftUI app, Apple-supported build workflow (normally Xcode on a Mac), testing, and applicable Apple Developer distribution membership.
+Bu sürüm GitHub Pages üzerinden çalışan bir PWA'dır; Apple App Store'da yayımlanmış native uygulama değildir. Native App Store sürümü için SwiftUI ile ayrı iOS uygulaması, Xcode ile derleme/test ve Apple Developer dağıtım süreci gerekir.
