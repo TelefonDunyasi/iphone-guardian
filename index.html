@@ -12,9 +12,9 @@
 </section>
 <section class="hero"><div class="eyebrow">DİJİTAL GÜVENLİK REHBERİN</div><h1 id="headline">iPhone’un için daha güvenli alışkanlıklar.</h1><p id="intro">Kontrol listeni tamamla, güvenlik adımlarını öğren ve ilerlemeni takip et.</p><b id="count">0 / 13 adım tamamlandı</b><div class="progress"><span id="bar"></span></div></section>
 <section class="urlcheck-card" aria-labelledby="urlcheckTitle">
- <div class="eyebrow">GUARD YEREL ANALİZ + PHISHTANK</div><h3 id="urlcheckTitle">Şüpheli bağlantıyı kontrol et</h3><p>Bağlantının adres yapısını inceler ve PhishTank topluluk oltalama veritabanında arar. Kontrol için URL, PhishTank servisine gönderilir.</p>
+ <div class="eyebrow">GUARD YEREL ANALİZ + GOOGLE WEB RISK</div><h3 id="urlcheckTitle">Şüpheli bağlantıyı kontrol et</h3><p>Bağlantının adres yapısını inceler ve Google Web Risk tehdit listelerinde arar. Kontrol için URL, Google Web Risk servisine gönderilir.</p>
  <form id="urlCheckForm" class="urlcheck-form"><input id="urlCheckInput" class="urlcheck-input" type="url" inputmode="url" autocomplete="url" maxlength="2048" placeholder="https://ornek.com" aria-label="Kontrol edilecek web adresi" required><button id="urlCheckButton" class="urlcheck-submit" type="submit">Bağlantıyı kontrol et</button></form>
- <p id="urlCheckStatus" class="urlcheck-status" role="status" aria-live="polite">Kontrol için Guardian hesabınla giriş yapmalısın.</p><div id="urlCheckResult" class="urlcheck-result" aria-live="polite"></div><p class="urlcheck-meta">Önemli: PhishTank eşleşmesi bulunmaması güvenlik garantisi değildir. PhishTank servisi yanıt vermezse yalnızca yerel adres analizi gösterilir. URL kontrol amacıyla üçüncü taraf PhishTank servisine gönderilir.</p>
+ <p id="urlCheckStatus" class="urlcheck-status" role="status" aria-live="polite">Kontrol için Guardian hesabınla giriş yapmalısın.</p><div id="urlCheckResult" class="urlcheck-result" aria-live="polite"></div><p class="urlcheck-meta">Önemli: Google Web Risk eşleşmesi bulunmaması güvenlik garantisi değildir. Servis yanıt vermezse kontrol başarısız sayılır; yalnızca yerel analiz sonucu güvenli kabul edilmez. URL, tehdit kontrolü için Google Web Risk servisine gönderilir.</p>
 </section>
 
 <section class="urlcheck-card" id="messageGuard" aria-labelledby="messageGuardTitle">
@@ -88,7 +88,7 @@ urlCheckForm.addEventListener("submit",async event=>{
  if(!authUser){urlCheckMessage("Önce Guardian hesabınla giriş yap. Oturum açılmadan kontrol isteği gönderilmez.");return}
  urlCheckButton.disabled=true;
  urlCheckButton.textContent="Kontrol ediliyor…";
- urlCheckMessage("Guard bağlantı adresini inceliyor…");
+ urlCheckMessage("Guard ve Google Web Risk bağlantı adresini inceliyor…");
  try{
   const {data,error}=await authClient.functions.invoke("smooth-responder",{body:{url:parsed.href}});
   if(error){
@@ -99,80 +99,54 @@ urlCheckForm.addEventListener("submit",async event=>{
   if(!data||!["danger","review","no_match"].includes(data.status)){
    throw new Error(data?.error||"Beklenmeyen veya eksik bir yanıt alındı.");
   }
-
   const heading=document.createElement("strong");
   const explanation=document.createElement("p");
   explanation.style.margin="7px 0 0";
-  if(data.phishTankVerified){
+  const threats=Array.isArray(data.threatTypes)?data.threatTypes:[];
+  if(threats.length){
    urlCheckResult.className="urlcheck-result show danger";
-   heading.textContent="PHISHTANK'TA DOĞRULANMIŞ OLTALAMA KAYDI BULUNDU";
-   explanation.textContent="Bu bağlantıyı açma ve kişisel bilgi girme. PhishTank topluluk veritabanında doğrulanmış, geçerli bir oltalama kaydı var.";
-   urlCheckMessage("Uyarı: Doğrulanmış oltalama kaydı bulundu.");
+   heading.textContent="GOOGLE WEB RISK TEHDİT EŞLEŞMESİ BULDU";
+   explanation.textContent="Google Web Risk bu adresi bilinen tehdit türleriyle eşleştirdi. Bağlantıyı açma ve kişisel bilgi girme.";
+   urlCheckMessage("Uyarı: Google Web Risk tehdit eşleşmesi bulundu.");
   }else if(data.status==="danger"){
    urlCheckResult.className="urlcheck-result show danger";
-   heading.textContent="YÜKSEK RİSK İŞARETLERİ BULUNDU";
-   explanation.textContent="Bu bağlantıyı açmamanı ve kişisel bilgi girmemeni öneririz.";
-   urlCheckMessage("Analiz tamamlandı. Yüksek risk işaretleri bulundu.");
+   heading.textContent="YÜKSEK YEREL RİSK İŞARETLERİ BULUNDU";
+   explanation.textContent="Adres yapısında belirgin risk işaretleri var. Bağlantıyı açmamanı ve kişisel bilgi girmemeni öneririz.";
+   urlCheckMessage("Analiz tamamlandı. Yüksek yerel risk işaretleri bulundu.");
   }else if(data.status==="review"){
    urlCheckResult.className="urlcheck-result show neutral";
    heading.textContent="DİKKAT — BAĞLANTIYI İNCELE";
-   explanation.textContent="Bazı şüpheli adres özellikleri veya doğrulaması kesinleşmemiş bir PhishTank kaydı bulundu. Göndereni başka bir kanaldan doğrulamadan bağlantıyı açma.";
-   urlCheckMessage("Analiz tamamlandı. Dikkat gerektiren işaretler bulundu.");
+   explanation.textContent="Adres yapısında dikkat gerektiren özellikler bulundu. Göndereni başka bir kanaldan doğrulamadan bağlantıyı açma.";
+   urlCheckMessage("Analiz tamamlandı. Dikkat gerektiren yerel işaretler bulundu.");
   }else{
    urlCheckResult.className="urlcheck-result show safe";
-   heading.textContent="DOĞRULANMIŞ OLTALAMA EŞLEŞMESİ BULUNMADI";
-   explanation.textContent=data.phishTankStatus==="not_listed"
-    ? "PhishTank veritabanında eşleşme bulunmadı ve yerel analiz belirgin risk işareti saptamadı. Bu, bağlantının güvenli olduğu anlamına gelmez."
-    : "PhishTank sorgusu tamamlanamadı. Bu sonuç yalnızca yerel adres analizine dayanır; bağlantının güvenli olduğu anlamına gelmez.";
-   urlCheckMessage(data.phishTankStatus==="not_listed"?"Analiz tamamlandı. PhishTank eşleşmesi bulunmadı.":"Yerel analiz tamamlandı; PhishTank sorgusu yapılamadı.");
+   heading.textContent="GOOGLE WEB RISK TEHDİT EŞLEŞMESİ BULUNMADI";
+   explanation.textContent="Google Web Risk'in kontrol ettiği tehdit listelerinde eşleşme bulunmadı ve yerel analiz belirgin risk işareti saptamadı. Bu, bağlantının kesinlikle güvenli olduğu anlamına gelmez.";
+   urlCheckMessage("Analiz tamamlandı. Bilinen tehdit listelerinde eşleşme bulunmadı.");
   }
   urlCheckResult.append(heading,explanation);
-
   if(Array.isArray(data.risks)&&data.risks.length){
-   const list=document.createElement("ul");
-   list.style.margin="9px 0 0";
-   list.style.paddingLeft="20px";
-   for(const risk of data.risks){
-    const item=document.createElement("li");
-    item.textContent=String(risk);
-    list.appendChild(item);
-   }
+   const list=document.createElement("ul");list.style.margin="9px 0 0";list.style.paddingLeft="20px";
+   for(const risk of data.risks){const item=document.createElement("li");item.textContent=String(risk);list.appendChild(item)}
    urlCheckResult.appendChild(list);
   }
-
+  if(threats.length){
+   const list=document.createElement("ul");list.style.margin="9px 0 0";list.style.paddingLeft="20px";
+   threats.forEach(type=>{const item=document.createElement("li");item.textContent=String(type).replaceAll("_"," ");list.appendChild(item)});
+   urlCheckResult.appendChild(list);
+  }
   const when=data.checkedAt?new Date(data.checkedAt).toLocaleString("tr-TR"):"";
-  const meta=document.createElement("div");
-  meta.className="urlcheck-meta";
-  const score=Number.isFinite(data.riskScore)?" · Risk puanı: "+data.riskScore+"/100":"";
-  meta.textContent="Analiz: "+String(data.provider||"Guard Yerel Risk Analizi")+score+(when?" · Kontrol zamanı: "+when:"");
+  const meta=document.createElement("div");meta.className="urlcheck-meta";
+  const score=Number.isFinite(data.riskScore)?" · Yerel risk puanı: "+data.riskScore+"/100":"";
+  meta.textContent="Analiz: "+String(data.provider||"Google Web Risk + Guard Yerel Analiz")+score+(when?" · Kontrol zamanı: "+when:"");
   urlCheckResult.appendChild(meta);
-
-  if(data.phishTankMessage){
-   const sourceNote=document.createElement("p");
-   sourceNote.className="urlcheck-meta";
-   sourceNote.textContent=String(data.phishTankMessage);
-   urlCheckResult.appendChild(sourceNote);
-  }
-  if(typeof data.phishTankDetail==="string" && data.phishTankDetail.startsWith("https://")){
-   const detail=document.createElement("a");
-   detail.href=data.phishTankDetail;
-   detail.target="_blank";
-   detail.rel="noopener noreferrer";
-   detail.textContent="PhishTank kayıt ayrıntısını görüntüle";
-   detail.style.color="#9feaf2";
-   detail.style.display="inline-block";
-   detail.style.marginTop="8px";
-   urlCheckResult.appendChild(detail);
-  }
-
-  const disclaimer=document.createElement("p");
-  disclaimer.className="urlcheck-meta";
-  disclaimer.textContent=String(data.disclaimer||"Bu sonuç güvenlik garantisi değildir.");
+  const disclaimer=document.createElement("p");disclaimer.className="urlcheck-meta";
+  disclaimer.textContent=String(data.disclaimer||"Tehdit eşleşmesi bulunmaması güvenlik garantisi değildir.");
   urlCheckResult.appendChild(disclaimer);
  }catch(error){
   urlCheckResult.className="urlcheck-result show neutral";
   urlCheckResult.textContent=error.message||"Kontrol tamamlanamadı.";
-  urlCheckMessage("Kontrol başarısız oldu. Oturumunu ve bağlantını kontrol et.");
+  urlCheckMessage("Kontrol başarısız oldu. Oturumunu, bağlantını ve güvenlik sağlayıcısını kontrol et.");
  }finally{
   urlCheckButton.disabled=false;
   urlCheckButton.textContent="Bağlantıyı kontrol et";
