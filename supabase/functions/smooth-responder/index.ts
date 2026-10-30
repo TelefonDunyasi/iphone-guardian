@@ -110,17 +110,87 @@ Deno.serve(async (req) => {
       addRisk(15, "Bağlantı standart dışı bir port kullanıyor.");
     }
 
+    // PhishTank checks the submitted URL against its community phishing database.
+    // Keep the application key in Supabase secrets; never expose it in the browser.
+    let phishTankStatus: "listed" | "not_listed" | "unavailable" = "unavailable";
+    let phishTankVerified = false;
+    let phishTankDetail: string | null = null;
+    let phishTankMessage = "PhishTank sorgusu şu anda tamamlanamadı.";
+
+    try {
+      const form = new URLSearchParams({
+        url: parsed.href,
+        format: "json",
+      });
+      const appKey = Deno.env.get("PHISHTANK_APP_KEY");
+      if (appKey) form.set("app_key", appKey);
+
+      const response = await fetch("https://checkurl.phishtank.com/checkurl/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": "Guard-iPhoneGuardian/1.0",
+        },
+        body: form.toString(),
+        signal: AbortSignal.timeout(9000),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const record = result?.results?.url;
+        if (record?.in_database === true || record?.in_database === "true") {
+          const verified = record?.verified === true || record?.verified === "y" || record?.verified === "true";
+          const valid = record?.valid === true || record?.valid === "y" || record?.valid === "true";
+          if (verified && valid) {
+            phishTankStatus = "listed";
+            phishTankVerified = true;
+            phishTankMessage = "PhishTank topluluk veritabanında doğrulanmış ve geçerli oltalama kaydı bulundu.";
+            if (record?.phish_detail_page && typeof record.phish_detail_page === "string" &&
+                record.phish_detail_page.startsWith("https://")) {
+              phishTankDetail = record.phish_detail_page;
+            }
+            addRisk(100, "PhishTank veritabanında doğrulanmış oltalama bağlantısı olarak listeleniyor.");
+          } else {
+            phishTankStatus = "listed";
+            phishTankMessage = "PhishTank veritabanında kayıt bulundu ancak doğrulama/geçerlilik durumu kesin değil.";
+            addRisk(35, "PhishTank'ta kayıt var; doğrulama durumu kesin olmadığından dikkatli ol.");
+          }
+        } else {
+          phishTankStatus = "not_listed";
+          phishTankMessage = "PhishTank veritabanında bu URL için eşleşme bulunmadı.";
+        }
+      } else {
+        console.error("PhishTank lookup status:", response.status);
+        phishTankMessage = response.status === 509
+          ? "PhishTank istek sınırına ulaşıldı; daha sonra tekrar dene."
+          : "PhishTank servisi şu anda yanıt vermiyor.";
+      }
+    } catch (lookupError) {
+      console.error("PhishTank lookup failed:", lookupError);
+      phishTankMessage = "PhishTank sorgusu zaman aşımına uğradı veya geçici olarak kullanılamıyor.";
+    }
+
     score = Math.min(score, 100);
     const status = score >= 50 ? "danger" : score > 0 ? "review" : "no_match";
+
+    if (risks.length === 0) {
+      risks.push("Belirlenen yerel yapısal risk işaretlerine rastlanmadı.");
+    }
 
     return reply({
       status,
       riskScore: score,
       risks,
+      phishTankStatus,
+      phishTankVerified,
+      phishTankMessage,
+      phishTankDetail,
       checkedAt: new Date().toISOString(),
-      provider: "Guard Yerel Risk Analizi",
+      provider: phishTankStatus === "unavailable"
+        ? "Guard Yerel Risk Analizi · PhishTank erişilemedi"
+        : "Guard Yerel Risk Analizi + PhishTank",
       disclaimer:
-        "Bu analiz yalnızca URL biçimindeki bazı risk işaretlerini değerlendirir. Canlı tehdit istihbaratı veya zararlı site veritabanı sorgusu değildir. Risk işareti bulunmaması bağlantının güvenli olduğunu kanıtlamaz."
+        "PhishTank eşleşmesi yalnızca topluluk veritabanındaki kayıtları gösterir. Eşleşme bulunmaması bağlantının güvenli olduğunu kanıtlamaz. PhishTank erişilemezse sonuç yerel URL analizine dayanır. URL, kontrol amacıyla PhishTank servisine gönderilir."
     });
   } catch (error) {
     console.error("Guard URL analysis error:", error);
