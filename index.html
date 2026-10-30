@@ -217,7 +217,13 @@ if("serviceWorker"in navigator&&location.protocol.startsWith("http"))addEventLis
    if(!response.ok)throw new Error("Apple mağaza servisi HTTP "+response.status);
    const data=await response.json();
    if(!data.results||!data.results.length)throw new Error("Türkiye App Store kataloğunda eşleşme bulunamadı. Uygulama adını veya App Store bağlantısını kontrol et.");
-   const apps=data.results;
+   const normalizeAppName=value=>String(value||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").toLocaleLowerCase("tr-TR");
+   const searchTerms=normalizeAppName(raw).split(/\\s+/).filter(term=>term.length>1);
+   const apps=idMatch?data.results:data.results.filter(app=>{
+    const appName=normalizeAppName(app.trackName);
+    return searchTerms.length>0&&searchTerms.every(term=>appName.includes(term));
+   });
+   if(!apps.length)throw new Error("Aradığın adla doğrudan eşleşen uygulama bulunamadı. Uygulamanın tam adını veya App Store bağlantısını dene.");
    result.className="urlcheck-result show neutral";
    result.replaceChildren();
    const intro=document.createElement("p");
