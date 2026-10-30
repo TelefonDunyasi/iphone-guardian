@@ -12,9 +12,9 @@
 </section>
 <section class="hero"><div class="eyebrow">DİJİTAL GÜVENLİK REHBERİN</div><h1 id="headline">iPhone’un için daha güvenli alışkanlıklar.</h1><p id="intro">Kontrol listeni tamamla, güvenlik adımlarını öğren ve ilerlemeni takip et.</p><b id="count">0 / 13 adım tamamlandı</b><div class="progress"><span id="bar"></span></div></section>
 <section class="urlcheck-card" aria-labelledby="urlcheckTitle">
- <div class="eyebrow">GUARD YEREL ANALİZ + GOOGLE WEB RISK</div><h3 id="urlcheckTitle">Şüpheli bağlantıyı kontrol et</h3><p>Bağlantının adres yapısını inceler ve Google Web Risk tehdit listelerinde arar. Kontrol için URL, Google Web Risk servisine gönderilir.</p>
+ <div class="eyebrow">GUARD ÜCRETSİZ YEREL BAĞLANTI ANALİZİ</div><h3 id="urlcheckTitle">Şüpheli bağlantıyı kontrol et</h3><p>Bağlantının adres yapısını ücretsiz olarak bu cihazda inceler. URL herhangi bir güvenlik servisine veya sunucuya gönderilmez.</p>
  <form id="urlCheckForm" class="urlcheck-form"><input id="urlCheckInput" class="urlcheck-input" type="url" inputmode="url" autocomplete="url" maxlength="2048" placeholder="https://ornek.com" aria-label="Kontrol edilecek web adresi" required><button id="urlCheckButton" class="urlcheck-submit" type="submit">Bağlantıyı kontrol et</button></form>
- <p id="urlCheckStatus" class="urlcheck-status" role="status" aria-live="polite">Kontrol için Guardian hesabınla giriş yapmalısın.</p><div id="urlCheckResult" class="urlcheck-result" aria-live="polite"></div><p class="urlcheck-meta">Önemli: Google Web Risk eşleşmesi bulunmaması güvenlik garantisi değildir. Servis yanıt vermezse kontrol başarısız sayılır; yalnızca yerel analiz sonucu güvenli kabul edilmez. URL, tehdit kontrolü için Google Web Risk servisine gönderilir.</p>
+ <p id="urlCheckStatus" class="urlcheck-status" role="status" aria-live="polite">Kontrol için Guardian hesabınla giriş yapmalısın.</p><div id="urlCheckResult" class="urlcheck-result" aria-live="polite"></div><p class="urlcheck-meta">Önemli: Bu ücretsiz kontrol yalnızca adres yapısındaki bazı risk işaretlerini arar. Dış tehdit veritabanlarını, sitenin içeriğini veya dosyalarını taramaz; güvenlik garantisi değildir.</p>
 </section>
 
 <section class="urlcheck-card" id="messageGuard" aria-labelledby="messageGuardTitle">
@@ -74,82 +74,72 @@ el("authSignout").onclick=async()=>{if(!authClient)return;const {error}=await au
 initAuth();
 const urlCheckForm=el("urlCheckForm"),urlCheckInput=el("urlCheckInput"),urlCheckButton=el("urlCheckButton"),urlCheckStatus=el("urlCheckStatus"),urlCheckResult=el("urlCheckResult");
 function urlCheckMessage(message){urlCheckStatus.textContent=message}
-urlCheckForm.addEventListener("submit",async event=>{
+function analyzeUrlLocally(parsed){
+ const host=parsed.hostname.toLowerCase().replace(/^\\[|\\]$/g,"").replace(/\\.$/,"");
+ const risks=[];let score=0;
+ const add=(points,message)=>{score+=points;risks.push(message)};
+ if(parsed.username||parsed.password)add(50,"Adresin içine kullanıcı adı veya parola yerleştirilmiş.");
+ const ipv4Parts=host.split(".");
+ const isIpv4=ipv4Parts.length===4&&ipv4Parts.every(part=>/^\\d{1,3}$/.test(part)&&Number(part)<=255);
+ const isIpv6=host.includes(":");
+ if(isIpv4||isIpv6||host==="localhost"||host.endsWith(".localhost")||host.endsWith(".local")||host.endsWith(".internal"))add(35,"Bağlantı genel bir alan adı yerine IP veya yerel ağ adresi kullanıyor.");
+ if(host.includes("xn--"))add(30,"Alan adı uluslararası kodlanmış karakterler içeriyor; benzer görünen harflere dikkat et.");
+ const shorteners=["bit.ly","tinyurl.com","t.co","is.gd","cutt.ly","rb.gy","shorturl.at","ow.ly","lnkd.in","buff.ly"];
+ if(shorteners.some(domain=>host===domain||host.endsWith("."+domain)))add(20,"Kısaltılmış bağlantı gerçek hedef adresi gizleyebilir.");
+ const labels=host.split(".");
+ if(labels.length>=5)add(15,"Alan adında olağandan fazla alt alan adı bulunuyor.");
+ if(host.length>60)add(10,"Alan adı alışılmadık derecede uzun.");
+ if(labels.some(label=>label.startsWith("-")||label.endsWith("-")))add(10,"Alan adında dikkat gerektiren tire kullanımı var.");
+ if(parsed.port&&!(parsed.protocol==="http:"&&parsed.port==="80")&&!(parsed.protocol==="https:"&&parsed.port==="443"))add(15,"Bağlantı standart dışı bir port kullanıyor.");
+ if(parsed.protocol==="http:")add(15,"Bağlantı şifreli HTTPS yerine şifresiz HTTP kullanıyor.");
+ if(!risks.length)risks.push("Bu hızlı yerel kontrolde belirgin adres-yapısı risk işareti bulunmadı.");
+ return {score:Math.min(score,100),risks};
+}
+urlCheckForm.addEventListener("submit",event=>{
  event.preventDefault();
- urlCheckResult.className="urlcheck-result";
- urlCheckResult.replaceChildren();
- const raw=urlCheckInput.value.trim();
- let parsed;
+ urlCheckResult.className="urlcheck-result";urlCheckResult.replaceChildren();
+ const raw=urlCheckInput.value.trim();let parsed;
  try{parsed=new URL(raw)}catch{urlCheckMessage("Geçerli bir web adresi gir. Örnek: https://ornek.com");return}
- if(!["http:","https:"].includes(parsed.protocol)||!parsed.hostname.includes(".")){
-  urlCheckMessage("Yalnızca geçerli HTTP veya HTTPS adresleri kontrol edilebilir.");return;
- }
- if(!authClient){urlCheckMessage("Güvenlik servisi henüz yapılandırılmamış.");return}
- if(!authUser){urlCheckMessage("Önce Guardian hesabınla giriş yap. Oturum açılmadan kontrol isteği gönderilmez.");return}
- urlCheckButton.disabled=true;
- urlCheckButton.textContent="Kontrol ediliyor…";
- urlCheckMessage("Guard ve Google Web Risk bağlantı adresini inceliyor…");
+ if(!["http:","https:"].includes(parsed.protocol)||!parsed.hostname){urlCheckMessage("Yalnızca geçerli HTTP veya HTTPS adresleri kontrol edilebilir.");return}
+ urlCheckButton.disabled=true;urlCheckButton.textContent="Cihazda inceleniyor…";
+ urlCheckMessage("Bağlantı yalnızca bu cihazda inceleniyor; herhangi bir güvenlik servisine gönderilmiyor.");
  try{
-  const {data,error}=await authClient.functions.invoke("smooth-responder",{body:{url:parsed.href}});
-  if(error){
-   let detail="Güvenlik servisine ulaşılamadı.";
-   try{const response=error.context;if(response&&typeof response.json==="function"){const payload=await response.json();if(payload?.error)detail=payload.error}}catch{}
-   throw new Error(detail);
-  }
-  if(!data||!["danger","review","no_match"].includes(data.status)){
-   throw new Error(data?.error||"Beklenmeyen veya eksik bir yanıt alındı.");
-  }
-  const heading=document.createElement("strong");
-  const explanation=document.createElement("p");
+  const analysis=analyzeUrlLocally(parsed);
+  const status=analysis.score>=50?"danger":analysis.score>0?"review":"no_match";
+  const heading=document.createElement("strong"),explanation=document.createElement("p");
   explanation.style.margin="7px 0 0";
-  const threats=Array.isArray(data.threatTypes)?data.threatTypes:[];
-  if(threats.length){
+  if(status==="danger"){
    urlCheckResult.className="urlcheck-result show danger";
-   heading.textContent="GOOGLE WEB RISK TEHDİT EŞLEŞMESİ BULDU";
-   explanation.textContent="Google Web Risk bu adresi bilinen tehdit türleriyle eşleştirdi. Bağlantıyı açma ve kişisel bilgi girme.";
-   urlCheckMessage("Uyarı: Google Web Risk tehdit eşleşmesi bulundu.");
-  }else if(data.status==="danger"){
-   urlCheckResult.className="urlcheck-result show danger";
-   heading.textContent="YÜKSEK YEREL RİSK İŞARETLERİ BULUNDU";
-   explanation.textContent="Adres yapısında belirgin risk işaretleri var. Bağlantıyı açmamanı ve kişisel bilgi girmemeni öneririz.";
-   urlCheckMessage("Analiz tamamlandı. Yüksek yerel risk işaretleri bulundu.");
-  }else if(data.status==="review"){
+   heading.textContent="YÜKSEK DİKKAT GEREKTİREN ADRES İŞARETLERİ";
+   explanation.textContent="Adres yapısında birden fazla veya güçlü risk işareti bulundu. Bağlantıyı açma; göndereni bağımsız bir kanaldan doğrula.";
+   urlCheckMessage("Yerel analiz tamamlandı. Yüksek dikkat gerektiren işaretler bulundu.");
+  }else if(status==="review"){
    urlCheckResult.className="urlcheck-result show neutral";
-   heading.textContent="DİKKAT — BAĞLANTIYI İNCELE";
-   explanation.textContent="Adres yapısında dikkat gerektiren özellikler bulundu. Göndereni başka bir kanaldan doğrulamadan bağlantıyı açma.";
-   urlCheckMessage("Analiz tamamlandı. Dikkat gerektiren yerel işaretler bulundu.");
+   heading.textContent="DİKKAT — ADRESİ İNCELE";
+   explanation.textContent="Adres yapısında dikkat gerektiren özellikler bulundu. Bu işaretler tek başına dolandırıcılık kanıtı değildir.";
+   urlCheckMessage("Yerel analiz tamamlandı. Dikkat gerektiren işaretler bulundu.");
   }else{
-   urlCheckResult.className="urlcheck-result show safe";
-   heading.textContent="GOOGLE WEB RISK TEHDİT EŞLEŞMESİ BULUNMADI";
-   explanation.textContent="Google Web Risk'in kontrol ettiği tehdit listelerinde eşleşme bulunmadı ve yerel analiz belirgin risk işareti saptamadı. Bu, bağlantının kesinlikle güvenli olduğu anlamına gelmez.";
-   urlCheckMessage("Analiz tamamlandı. Bilinen tehdit listelerinde eşleşme bulunmadı.");
+   urlCheckResult.className="urlcheck-result show neutral";
+   heading.textContent="BELİRGİN ADRES-YAPISI RİSKİ BULUNMADI";
+   explanation.textContent="Bu yalnızca temel adres biçimi kontrolüdür. Site itibarını veya zararlı yazılım/oltalama listelerini kontrol etmez; bağlantının güvenli olduğu anlamına gelmez.";
+   urlCheckMessage("Yerel analiz tamamlandı. Dış tehdit veritabanı sorgulanmadı.");
   }
   urlCheckResult.append(heading,explanation);
-  if(Array.isArray(data.risks)&&data.risks.length){
-   const list=document.createElement("ul");list.style.margin="9px 0 0";list.style.paddingLeft="20px";
-   for(const risk of data.risks){const item=document.createElement("li");item.textContent=String(risk);list.appendChild(item)}
-   urlCheckResult.appendChild(list);
-  }
-  if(threats.length){
-   const list=document.createElement("ul");list.style.margin="9px 0 0";list.style.paddingLeft="20px";
-   threats.forEach(type=>{const item=document.createElement("li");item.textContent=String(type).replaceAll("_"," ");list.appendChild(item)});
-   urlCheckResult.appendChild(list);
-  }
-  const when=data.checkedAt?new Date(data.checkedAt).toLocaleString("tr-TR"):"";
+  const list=document.createElement("ul");list.style.margin="9px 0 0";list.style.paddingLeft="20px";
+  analysis.risks.forEach(risk=>{const item=document.createElement("li");item.textContent=risk;list.appendChild(item)});
+  urlCheckResult.appendChild(list);
   const meta=document.createElement("div");meta.className="urlcheck-meta";
-  const score=Number.isFinite(data.riskScore)?" · Yerel risk puanı: "+data.riskScore+"/100":"";
-  meta.textContent="Analiz: "+String(data.provider||"Google Web Risk + Guard Yerel Analiz")+score+(when?" · Kontrol zamanı: "+when:"");
+  meta.textContent="Ücretsiz cihaz içi analiz · Yerel işaret puanı: "+analysis.score+"/100 · URL sunucuya gönderilmedi.";
   urlCheckResult.appendChild(meta);
   const disclaimer=document.createElement("p");disclaimer.className="urlcheck-meta";
-  disclaimer.textContent=String(data.disclaimer||"Tehdit eşleşmesi bulunmaması güvenlik garantisi değildir.");
+  disclaimer.textContent="Sınır: Bu özellik dış tehdit listelerini sorgulamaz, sitenin içeriğini veya dosyalarını taramaz. Hiçbir eşleşme/işaret bulunmaması güvenlik garantisi değildir.";
   urlCheckResult.appendChild(disclaimer);
  }catch(error){
   urlCheckResult.className="urlcheck-result show neutral";
-  urlCheckResult.textContent=error.message||"Kontrol tamamlanamadı.";
-  urlCheckMessage("Kontrol başarısız oldu. Oturumunu, bağlantını ve güvenlik sağlayıcısını kontrol et.");
+  urlCheckResult.textContent="Yerel kontrol tamamlanamadı. Adresi yeniden kontrol edip dene.";
+  urlCheckMessage("Yerel kontrol tamamlanamadı.");
  }finally{
-  urlCheckButton.disabled=false;
-  urlCheckButton.textContent="Bağlantıyı kontrol et";
+  urlCheckButton.disabled=false;urlCheckButton.textContent="Bağlantıyı kontrol et";
  }
 });
 let activeFilter="all";let searchTerm="";function el(id){return document.getElementById(id)}
