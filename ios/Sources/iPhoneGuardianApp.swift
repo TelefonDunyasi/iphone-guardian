@@ -302,7 +302,7 @@ struct AppAdvisorView: View {
                         Text(app.trackName).font(.headline)
                         Text("Geliştirici: \(app.sellerName ?? app.artistName ?? "Belirtilmemiş")")
                         Text("Kategori: \(app.primaryGenreName ?? "Belirtilmemiş") · Yaş: \(app.contentAdvisoryRating ?? "Belirtilmemiş")")
-                        Text(app.userRatingCount > 0 ? "Puan: \((app.averageUserRating ?? 0), specifier: "%.1f")/5 (\(app.userRatingCount ?? 0))" : "Yeterli puan bilgisi yok")
+                        Text((app.userRatingCount ?? 0) > 0 ? "Puan: \((app.averageUserRating ?? 0), specifier: "%.1f")/5 (\(app.userRatingCount ?? 0))" : "Yeterli puan bilgisi yok")
                         Text("SONUÇ: Mağaza kaydı bulundu — güvenlik için ek inceleme gerekli.")
                             .font(.subheadline.bold()).foregroundStyle(GuardianTheme.cyan)
                         if let url = URL(string: app.trackViewUrl ?? "") {
