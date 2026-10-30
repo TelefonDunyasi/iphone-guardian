@@ -14,7 +14,7 @@
 <section class="urlcheck-card" aria-labelledby="urlcheckTitle">
  <div class="eyebrow">GUARD ÜCRETSİZ YEREL BAĞLANTI ANALİZİ</div><h3 id="urlcheckTitle">Şüpheli bağlantıyı kontrol et</h3><p>Bağlantının adres yapısını ücretsiz olarak bu cihazda inceler. URL herhangi bir güvenlik servisine veya sunucuya gönderilmez.</p>
  <form id="urlCheckForm" class="urlcheck-form"><input id="urlCheckInput" class="urlcheck-input" type="url" inputmode="url" autocomplete="url" maxlength="2048" placeholder="https://ornek.com" aria-label="Kontrol edilecek web adresi" required><button id="urlCheckButton" class="urlcheck-submit" type="submit">Bağlantıyı kontrol et</button></form>
- <p id="urlCheckStatus" class="urlcheck-status" role="status" aria-live="polite">Kontrol için Guardian hesabınla giriş yapmalısın.</p><div id="urlCheckResult" class="urlcheck-result" aria-live="polite"></div><p class="urlcheck-meta">Önemli: Bu ücretsiz kontrol yalnızca adres yapısındaki bazı risk işaretlerini arar. Dış tehdit veritabanlarını, sitenin içeriğini veya dosyalarını taramaz; güvenlik garantisi değildir.</p>
+ <p id="urlCheckStatus" class="urlcheck-status" role="status" aria-live="polite">Ücretsiz bağlantı kontrolü giriş gerektirmez.</p><div id="urlCheckResult" class="urlcheck-result" aria-live="polite"></div><p class="urlcheck-meta">Önemli: Bu ücretsiz kontrol yalnızca adres yapısındaki bazı risk işaretlerini arar. Dış tehdit veritabanlarını, sitenin içeriğini veya dosyalarını taramaz; güvenlik garantisi değildir.</p>
 </section>
 
 <section class="urlcheck-card" id="messageGuard" aria-labelledby="messageGuardTitle">
@@ -75,12 +75,12 @@ initAuth();
 const urlCheckForm=el("urlCheckForm"),urlCheckInput=el("urlCheckInput"),urlCheckButton=el("urlCheckButton"),urlCheckStatus=el("urlCheckStatus"),urlCheckResult=el("urlCheckResult");
 function urlCheckMessage(message){urlCheckStatus.textContent=message}
 function analyzeUrlLocally(parsed){
- const host=parsed.hostname.toLowerCase().replace(/^\\[|\\]$/g,"").replace(/\\.$/,"");
+ const host=parsed.hostname.toLowerCase().replace(/^\[|\]$/g,"").replace(/\.$/,"");
  const risks=[];let score=0;
  const add=(points,message)=>{score+=points;risks.push(message)};
  if(parsed.username||parsed.password)add(50,"Adresin içine kullanıcı adı veya parola yerleştirilmiş.");
  const ipv4Parts=host.split(".");
- const isIpv4=ipv4Parts.length===4&&ipv4Parts.every(part=>/^\\d{1,3}$/.test(part)&&Number(part)<=255);
+ const isIpv4=ipv4Parts.length===4&&ipv4Parts.every(part=>/^\d{1,3}$/.test(part)&&Number(part)<=255);
  const isIpv6=host.includes(":");
  if(isIpv4||isIpv6||host==="localhost"||host.endsWith(".localhost")||host.endsWith(".local")||host.endsWith(".internal"))add(35,"Bağlantı genel bir alan adı yerine IP veya yerel ağ adresi kullanıyor.");
  if(host.includes("xn--"))add(30,"Alan adı uluslararası kodlanmış karakterler içeriyor; benzer görünen harflere dikkat et.");
