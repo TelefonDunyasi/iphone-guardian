@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 
 @main
 struct iPhoneGuardianApp: App {
@@ -301,7 +302,7 @@ struct AppAdvisorView: View {
                         Text(app.trackName).font(.headline)
                         Text("Geliştirici: \(app.sellerName ?? app.artistName ?? "Belirtilmemiş")")
                         Text("Kategori: \(app.primaryGenreName ?? "Belirtilmemiş") · Yaş: \(app.contentAdvisoryRating ?? "Belirtilmemiş")")
-                        Text(app.userRatingCount > 0 ? "Puan: \(app.averageUserRating, specifier: "%.1f")/5 (\(app.userRatingCount))" : "Yeterli puan bilgisi yok")
+                        Text(app.userRatingCount > 0 ? "Puan: \((app.averageUserRating ?? 0), specifier: "%.1f")/5 (\(app.userRatingCount ?? 0))" : "Yeterli puan bilgisi yok")
                         Text("SONUÇ: Mağaza kaydı bulundu — güvenlik için ek inceleme gerekli.")
                             .font(.subheadline.bold()).foregroundStyle(GuardianTheme.cyan)
                         if let url = URL(string: app.trackViewUrl ?? "") {
@@ -324,7 +325,7 @@ struct AppAdvisorView: View {
         let raw = query.trimmingCharacters(in: .whitespacesAndNewlines)
         let idMatch = raw.range(of: #"(?i)(?:id|id=)(\d{5,})"#, options: .regularExpression)
         let appID = idMatch.flatMap { range -> String? in
-            String(raw[range]).filter(\.isNumber).nilIfEmpty
+            String(raw[range]).filter { $0.isNumber }.nilIfEmpty
         }
         var components = URLComponents(string: appID == nil ? "https://itunes.apple.com/search" : "https://itunes.apple.com/lookup")
         if let appID {
@@ -369,8 +370,8 @@ struct StoreApp: Decodable, Identifiable {
     let artistName: String?
     let primaryGenreName: String?
     let contentAdvisoryRating: String?
-    let averageUserRating: Double
-    let userRatingCount: Int
+    let averageUserRating: Double?
+    let userRatingCount: Int?
     let trackViewUrl: String?
     var id: Int { trackId }
 }
