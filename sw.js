@@ -1,4 +1,4 @@
-const CACHE="iphone-guardian-v0-8-syncfix";
+const CACHE="iphone-guardian-v0-9-app-advisor";
 const ASSETS=["./","./index.html","./manifest.webmanifest"];
 self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)));self.skipWaiting()});
 self.addEventListener("activate",event=>{event.waitUntil(self.clients.claim())});
