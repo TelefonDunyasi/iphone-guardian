@@ -12,6 +12,12 @@ Arayüz; e-posta/parola kaydı, giriş, e-posta doğrulaması, parola sıfırlam
 6. supabase-config.js dosyasındaki url ve anonKey alanlarını kendi Project URL ve anon/publishable key değerlerinle doldur. Service role anahtarını buraya koyma.
 7. GitHub Pages'in yeni sürümü yayınlamasını bekle. Siteyi Safari'de açıp ücretsiz hesap oluştur; doğrulama e-postasını onayla ve giriş yap.
 
+## Ücretsiz bağlantı kontrolü
+
+- Bağlantı adresi analizi uygulama içinde, cihazda çalışır; Supabase Edge Function veya Google Web Risk çağrısı yapmaz.
+- URL analizi için Google Cloud faturalandırması, Web Risk API anahtarı veya PhishTank anahtarı gerekmez.
+- Mesaj analizi de cihaz içinde sezgisel metin kalıplarını kullanır.
+
 ## Güvenlik ve kapsam
 
 - Parolalar Guardian tarafından saklanmaz; Supabase Auth yönetir.
