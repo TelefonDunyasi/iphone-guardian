@@ -12,9 +12,9 @@
 </section>
 <section class="hero"><div class="eyebrow">DİJİTAL GÜVENLİK REHBERİN</div><h1 id="headline">iPhone’un için daha güvenli alışkanlıklar.</h1><p id="intro">Kontrol listeni tamamla, güvenlik adımlarını öğren ve ilerlemeni takip et.</p><b id="count">0 / 13 adım tamamlandı</b><div class="progress"><span id="bar"></span></div></section>
 <section class="urlcheck-card" aria-labelledby="urlcheckTitle">
- <div class="eyebrow">GOOGLE WEB RISK · CANLI BAĞLANTI KONTROLÜ</div><h3 id="urlcheckTitle">Şüpheli bağlantıyı kontrol et</h3><p>Bir web adresini Google Web Risk üzerinden kontrol et. Bu kontrol tek başına güvenlik garantisi vermez.</p>
+ <div class="eyebrow">GUARD YEREL RİSK ANALİZİ · ÜCRETSİZ KONTROL</div><h3 id="urlcheckTitle">Şüpheli bağlantıyı kontrol et</h3><p>Bağlantının adres yapısındaki bazı risk işaretlerini inceler. Bu kontrol canlı zararlı site veritabanı sorgusu değildir.</p>
  <form id="urlCheckForm" class="urlcheck-form"><input id="urlCheckInput" class="urlcheck-input" type="url" inputmode="url" autocomplete="url" maxlength="2048" placeholder="https://ornek.com" aria-label="Kontrol edilecek web adresi" required><button id="urlCheckButton" class="urlcheck-submit" type="submit">Bağlantıyı kontrol et</button></form>
- <p id="urlCheckStatus" class="urlcheck-status" role="status" aria-live="polite">Kontrol için Guardian hesabınla giriş yapmalısın.</p><div id="urlCheckResult" class="urlcheck-result" aria-live="polite"></div><p class="urlcheck-meta">Kontrol yalnızca girilen URL'yi Google Web Risk tehdit listelerinde arar. Eşleşme bulunmaması sitenin kesinlikle güvenli olduğu anlamına gelmez.</p>
+ <p id="urlCheckStatus" class="urlcheck-status" role="status" aria-live="polite">Kontrol için Guardian hesabınla giriş yapmalısın.</p><div id="urlCheckResult" class="urlcheck-result" aria-live="polite"></div><p class="urlcheck-meta">Önemli: Bu analiz yalnızca biçimsel risk işaretlerini değerlendirir. Bilinen zararlı siteleri veritabanıyla karşılaştırmaz ve hiçbir sonuç güvenlik garantisi vermez.</p>
 </section>
 <section class="card dashboard" aria-labelledby="dashTitle">
   <div class="dashboard-head"><div><div class="eyebrow">GUARDIAN INSIGHTS</div><h3 id="dashTitle">Güvenlik durumun</h3><p class="muted">Kontrol listendeki ilerlemenin özeti</p></div><span class="dash-mark">✦</span></div>
@@ -50,7 +50,85 @@ el("authSignout").onclick=async()=>{if(!authClient)return;const {error}=await au
 initAuth();
 const urlCheckForm=el("urlCheckForm"),urlCheckInput=el("urlCheckInput"),urlCheckButton=el("urlCheckButton"),urlCheckStatus=el("urlCheckStatus"),urlCheckResult=el("urlCheckResult");
 function urlCheckMessage(message){urlCheckStatus.textContent=message}
-urlCheckForm.addEventListener("submit",async event=>{event.preventDefault();urlCheckResult.className="urlcheck-result";urlCheckResult.textContent="";const raw=urlCheckInput.value.trim();let parsed;try{parsed=new URL(raw)}catch{urlCheckMessage("Geçerli bir web adresi gir. Örnek: https://ornek.com");return}if(!["http:","https:"].includes(parsed.protocol)||!parsed.hostname.includes(".")){urlCheckMessage("Yalnızca geçerli HTTP veya HTTPS adresleri kontrol edilebilir.");return}if(!authClient){urlCheckMessage("Güvenlik servisi henüz yapılandırılmamış.");return}if(!authUser){urlCheckMessage("Önce yukarıdaki Guardian hesabından giriş yap. Oturum açılmadan kontrol isteği gönderilmez.");return}urlCheckButton.disabled=true;urlCheckButton.textContent="Kontrol ediliyor…";urlCheckMessage("Google Web Risk sorgusu gönderiliyor…");try{const {data,error}=await authClient.functions.invoke("smooth-responder",{body:{url:parsed.href}});if(error){let detail="Güvenlik servisine ulaşılamadı.";try{const response=error.context;if(response&&typeof response.json==="function"){const payload=await response.json();if(payload?.error)detail=payload.error}}catch{}throw new Error(detail)}if(!data||!["danger","no_match"].includes(data.status))throw new Error(data?.error||"Beklenmeyen bir yanıt alındı.");if(data.status==="danger"){const labels=(data.threatTypes||[]).map(x=>({MALWARE:"Kötü amaçlı yazılım",SOCIAL_ENGINEERING:"Kimlik avı / sosyal mühendislik",UNWANTED_SOFTWARE:"İstenmeyen yazılım"}[x]||x));urlCheckResult.className="urlcheck-result show danger";urlCheckResult.textContent="TEHDİT EŞLEŞMESİ BULUNDU — Bu bağlantıyı açma. Tespit: "+(labels.join(", ")||"Tehdit listesi eşleşmesi");urlCheckMessage("Kontrol tamamlandı. Tehdit eşleşmesi bulundu.")}else{urlCheckResult.className="urlcheck-result show safe";urlCheckResult.textContent="Bilinen tehdit listelerinde eşleşme bulunmadı. Bu sonuç bağlantının kesinlikle güvenli olduğunu garanti etmez.";urlCheckMessage("Kontrol tamamlandı. Bilinen tehdit eşleşmesi bulunmadı.")}const when=data.checkedAt?new Date(data.checkedAt).toLocaleString("tr-TR"):"";const meta=document.createElement("div");meta.className="urlcheck-meta";meta.textContent="Sağlayıcı: Google Web Risk"+(when?" · Kontrol zamanı: "+when:"");urlCheckResult.appendChild(meta)}catch(error){urlCheckResult.className="urlcheck-result show neutral";urlCheckResult.textContent=error.message||"Kontrol tamamlanamadı.";urlCheckMessage("Kontrol başarısız oldu. Oturumunu ve bağlantını kontrol et.")}finally{urlCheckButton.disabled=false;urlCheckButton.textContent="Bağlantıyı kontrol et"}});
+urlCheckForm.addEventListener("submit",async event=>{
+ event.preventDefault();
+ urlCheckResult.className="urlcheck-result";
+ urlCheckResult.replaceChildren();
+ const raw=urlCheckInput.value.trim();
+ let parsed;
+ try{parsed=new URL(raw)}catch{urlCheckMessage("Geçerli bir web adresi gir. Örnek: https://ornek.com");return}
+ if(!["http:","https:"].includes(parsed.protocol)||!parsed.hostname.includes(".")){
+  urlCheckMessage("Yalnızca geçerli HTTP veya HTTPS adresleri kontrol edilebilir.");return;
+ }
+ if(!authClient){urlCheckMessage("Güvenlik servisi henüz yapılandırılmamış.");return}
+ if(!authUser){urlCheckMessage("Önce Guardian hesabınla giriş yap. Oturum açılmadan kontrol isteği gönderilmez.");return}
+ urlCheckButton.disabled=true;
+ urlCheckButton.textContent="Kontrol ediliyor…";
+ urlCheckMessage("Guard bağlantı adresini inceliyor…");
+ try{
+  const {data,error}=await authClient.functions.invoke("smooth-responder",{body:{url:parsed.href}});
+  if(error){
+   let detail="Güvenlik servisine ulaşılamadı.";
+   try{const response=error.context;if(response&&typeof response.json==="function"){const payload=await response.json();if(payload?.error)detail=payload.error}}catch{}
+   throw new Error(detail);
+  }
+  if(!data||!["danger","review","no_match"].includes(data.status)){
+   throw new Error(data?.error||"Beklenmeyen veya eksik bir yanıt alındı.");
+  }
+
+  const heading=document.createElement("strong");
+  const explanation=document.createElement("p");
+  explanation.style.margin="7px 0 0";
+  if(data.status==="danger"){
+   urlCheckResult.className="urlcheck-result show danger";
+   heading.textContent="YÜKSEK RİSK İŞARETLERİ BULUNDU";
+   explanation.textContent="Bu bağlantıyı açmamanı ve kişisel bilgi girmemeni öneririz.";
+   urlCheckMessage("Analiz tamamlandı. Yüksek risk işaretleri bulundu.");
+  }else if(data.status==="review"){
+   urlCheckResult.className="urlcheck-result show neutral";
+   heading.textContent="DİKKAT — BAĞLANTIYI İNCELE";
+   explanation.textContent="Bazı şüpheli adres özellikleri bulundu. Göndereni ve alan adını başka bir kanaldan doğrulamadan bağlantıyı açma.";
+   urlCheckMessage("Analiz tamamlandı. Dikkat gerektiren işaretler bulundu.");
+  }else{
+   urlCheckResult.className="urlcheck-result show safe";
+   heading.textContent="BELİRGİN BİÇİMSEL RİSK İŞARETİ BULUNMADI";
+   explanation.textContent="Bu, bağlantının güvenli olduğu anlamına gelmez. Guard bilinen zararlı site veritabanını sorgulamıyor.";
+   urlCheckMessage("Analiz tamamlandı. Biçimsel risk işareti bulunmadı.");
+  }
+  urlCheckResult.append(heading,explanation);
+
+  if(Array.isArray(data.risks)&&data.risks.length){
+   const list=document.createElement("ul");
+   list.style.margin="9px 0 0";
+   list.style.paddingLeft="20px";
+   for(const risk of data.risks){
+    const item=document.createElement("li");
+    item.textContent=String(risk);
+    list.appendChild(item);
+   }
+   urlCheckResult.appendChild(list);
+  }
+
+  const when=data.checkedAt?new Date(data.checkedAt).toLocaleString("tr-TR"):"";
+  const meta=document.createElement("div");
+  meta.className="urlcheck-meta";
+  const score=Number.isFinite(data.riskScore)?" · Risk puanı: "+data.riskScore+"/100":"";
+  meta.textContent="Analiz: "+String(data.provider||"Guard Yerel Risk Analizi")+score+(when?" · Kontrol zamanı: "+when:"");
+  urlCheckResult.appendChild(meta);
+
+  const disclaimer=document.createElement("p");
+  disclaimer.className="urlcheck-meta";
+  disclaimer.textContent=String(data.disclaimer||"Bu sonuç güvenlik garantisi değildir.");
+  urlCheckResult.appendChild(disclaimer);
+ }catch(error){
+  urlCheckResult.className="urlcheck-result show neutral";
+  urlCheckResult.textContent=error.message||"Kontrol tamamlanamadı.";
+  urlCheckMessage("Kontrol başarısız oldu. Oturumunu ve bağlantını kontrol et.");
+ }finally{
+  urlCheckButton.disabled=false;
+  urlCheckButton.textContent="Bağlantıyı kontrol et";
+ }
+});
 let activeFilter="all";let searchTerm="";function el(id){return document.getElementById(id)}
 function draw(){el("tasks").innerHTML=tasks.map(([id,title,desc])=>'<label class="task" data-task-card="'+id+'"><input type="checkbox" data-id="'+id+'" '+(done[id]?"checked":"")+'><span><b>'+title+'</b><small>'+desc+'</small></span></label>').join("");document.querySelectorAll("[data-id]").forEach(c=>c.onchange=()=>{done[c.dataset.id]=c.checked;localChangeVersion++;localStorage.setItem("ig_tasks",JSON.stringify(done));scheduleCloudSync();score();applyTaskView()});score();applyTaskView()}function applyTaskView(){let visible=0;tasks.forEach(([id,title,desc])=>{const card=document.querySelector('[data-task-card="'+id+'"]');const matchesFilter=activeFilter==="all"||(activeFilter==="done"&&done[id])||(activeFilter==="pending"&&!done[id]);const haystack=(title+" "+desc).toLocaleLowerCase("tr-TR");const matchesSearch=haystack.includes(searchTerm.toLocaleLowerCase("tr-TR"));card.hidden=!(matchesFilter&&matchesSearch);if(!card.hidden)visible++});el("listSummary").textContent=visible+" / "+tasks.length+" madde gösteriliyor"}
 function updateDashboard(n){const pending=tasks.length-n;const pct=Math.round(n/tasks.length*100);el("dashDone").textContent=n;el("dashPending").textContent=pending;el("dashPercent").textContent=pct+"%";el("dashFill").style.width=pct+"%";el("dashMessage").textContent=n===0?"İlk kontrolünü tamamlayarak başla.":pending===0?"Tüm rehber adımlarını işaretledin. Tebrikler!":"Güzel gidiyorsun; "+pending+" adım daha gözden geçirilebilir.";const groups=[["Hesap ve erişim",["pass","face","2fa","recovery","stolen"]],["Gizlilik ve paylaşım",["privacy","safety","lockscreen","profiles"]],["Cihaz ve gezinme",["ios","find","icloud","safari"]]];el("dashCategories").innerHTML=groups.map(([name,ids])=>{const total=ids.length;const count=ids.filter(id=>done[id]).length;return '<div class="dash-category"><span>'+name+'</span><small>'+count+'/'+total+'</small><div class="dash-category-track"><i style="width:'+(count/total*100)+'%"></i></div></div>'}).join("")}
