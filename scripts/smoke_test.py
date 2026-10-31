@@ -72,6 +72,14 @@ if worker_path.is_file():
     worker = worker_path.read_text(encoding="utf-8")
     require("addEventListener" in worker and "fetch" in worker,
             "Service worker should register lifecycle and fetch handlers.")
+    require("url.origin !== self.location.origin" in worker,
+            "Service worker must not intercept third-party requests.")
+    require('request.mode === "navigate"' in worker,
+            "Offline index fallback must be limited to page navigation.")
+    require('caches.match("./index.html")' in worker,
+            "Service worker should keep an offline navigation fallback.")
+    require("Response.error()" in worker,
+            "Missing offline assets must not be replaced with the HTML page.")
 
 if native_path.is_file():
     native = native_path.read_text(encoding="utf-8")
