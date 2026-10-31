@@ -71,14 +71,23 @@ Deno.serve(async (req) => {
       signal: AbortSignal.timeout(12000),
     });
 
+    const upstreamText = await upstream.text();
+    console.log("PhishTank response", { status: upstream.status, contentType: upstream.headers.get("content-type"), bodyPreview: upstreamText.slice(0, 500) });
     if (!upstream.ok) {
       return response({
         error: "PhishTank is temporarily unavailable.",
         upstreamStatus: upstream.status,
+        upstreamDetail: upstreamText.slice(0, 300),
       }, 502);
     }
 
-    const payload = await upstream.json();
+    let payload: any;
+    try {
+      payload = JSON.parse(upstreamText);
+    } catch {
+      console.error("PhishTank returned non-JSON response", upstreamText.slice(0, 500));
+      return response({ error: "PhishTank returned a non-JSON response.", upstreamStatus: upstream.status }, 502);
+    }
     const result = Array.isArray(payload?.results) ? payload.results[0] : payload?.results;
     if (!result || typeof result.in_database !== "boolean") {
       return response({ error: "PhishTank returned an unexpected response." }, 502);
@@ -97,10 +106,12 @@ Deno.serve(async (req) => {
       checkedAt: new Date().toISOString(),
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("Threat lookup failed", message, error instanceof Error ? error.stack : "");
     const timedOut = message.toLowerCase().includes("timeout");
     return response({
       error: timedOut ? "PhishTank request timed out." : "Threat lookup could not be completed.",
+      diagnostic: message.slice(0, 300),
     }, timedOut ? 504 : 502);
   }
 });
