@@ -17,7 +17,7 @@ function response(body: unknown, status = 200, origin = allowedOrigin) {
 Deno.serve(async (req) => {
   const origin = req.headers.get("origin") ?? "";
   if (origin && origin !== allowedOrigin) {
-    return response({ error: "Origin not allowed" }, 403, allowedOrigin);
+    return response({ error: "Origin not allowed" }, 403);
   }
 
   if (req.method === "OPTIONS") {
@@ -53,65 +53,73 @@ Deno.serve(async (req) => {
       return response({ error: "Only public HTTP/HTTPS URLs without embedded credentials can be checked." }, 400);
     }
 
-    const form = new URLSearchParams({
-      url: parsed.href,
-      format: "json",
-    });
-    const appKey = Deno.env.get("PHISHTANK_API_KEY");
-    if (appKey) form.set("app_key", appKey);
+    const apiKey = Deno.env.get("WEBRISK_API_KEY");
+    if (!apiKey) {
+      console.error("WEBRISK_API_KEY secret is missing");
+      return response({ error: "Google Web Risk is not configured on the server." }, 500);
+    }
 
-    const upstream = await fetch("https://checkurl.phishtank.com/checkurl/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Accept": "application/json",
-        "User-Agent": "iPhoneGuardian/1.0 (https://telefondunyasi.github.io/iphone-guardian/)",
-      },
-      body: form.toString(),
+    const endpoint = new URL("https://webrisk.googleapis.com/v1/uris:search");
+    endpoint.searchParams.set("uri", parsed.href);
+    endpoint.searchParams.set("key", apiKey);
+    endpoint.searchParams.append("threatTypes", "MALWARE");
+    endpoint.searchParams.append("threatTypes", "SOCIAL_ENGINEERING");
+    endpoint.searchParams.append("threatTypes", "UNWANTED_SOFTWARE");
+
+    const upstream = await fetch(endpoint.toString(), {
+      method: "GET",
+      headers: { "Accept": "application/json" },
       signal: AbortSignal.timeout(12000),
     });
 
     const upstreamText = await upstream.text();
-    console.log("PhishTank response", { status: upstream.status, contentType: upstream.headers.get("content-type"), bodyPreview: upstreamText.slice(0, 500) });
+    let payload: any = {};
+    if (upstreamText) {
+      try {
+        payload = JSON.parse(upstreamText);
+      } catch {
+        console.error("Google Web Risk returned a non-JSON response", { status: upstream.status });
+        return response({ error: "Google Web Risk returned an unexpected response.", upstreamStatus: upstream.status }, 502);
+      }
+    }
+
     if (!upstream.ok) {
-      return response({
-        error: "PhishTank is temporarily unavailable.",
-        upstreamStatus: upstream.status,
-        upstreamDetail: upstreamText.slice(0, 300),
-      }, 502);
+      const apiMessage = typeof payload?.error?.message === "string" ? payload.error.message : "";
+      console.error("Google Web Risk request failed", { status: upstream.status, message: apiMessage.slice(0, 300) });
+
+      if (upstream.status === 403) {
+        return response({
+          error: "Google Web Risk denied the request. Check that the Web Risk API is enabled and the API key is authorized.",
+          upstreamStatus: 403,
+        }, 502);
+      }
+      if (upstream.status === 429) {
+        return response({ error: "Google Web Risk quota or rate limit was reached. Try again later.", upstreamStatus: 429 }, 502);
+      }
+      return response({ error: "Google Web Risk is temporarily unavailable.", upstreamStatus: upstream.status }, 502);
     }
 
-    let payload: any;
-    try {
-      payload = JSON.parse(upstreamText);
-    } catch {
-      console.error("PhishTank returned non-JSON response", upstreamText.slice(0, 500));
-      return response({ error: "PhishTank returned a non-JSON response.", upstreamStatus: upstream.status }, 502);
-    }
-    const result = Array.isArray(payload?.results) ? payload.results[0] : payload?.results;
-    if (!result || typeof result.in_database !== "boolean") {
-      return response({ error: "PhishTank returned an unexpected response." }, 502);
-    }
+    const threat = payload?.threat ?? null;
+    const threatTypes = Array.isArray(threat?.threatTypes) ? threat.threatTypes : [];
+    const matched = threatTypes.length > 0;
 
-    const verified = String(result.verified ?? "").toLowerCase() === "yes";
-    const valid = String(result.valid ?? "").toLowerCase() === "yes";
     return response({
-      source: "PhishTank",
-      inDatabase: result.in_database,
-      matched: result.in_database && verified && valid,
-      verified: result.verified ?? null,
-      valid: result.valid ?? null,
-      phishId: result.phish_id ?? null,
-      detailUrl: result.phish_detail_url ?? null,
+      source: "Google Web Risk",
+      matched,
+      threatTypes,
+      expireTime: threat?.expireTime ?? null,
+      verdict: matched ? "known_threat_detected" : "no_known_threat_found",
       checkedAt: new Date().toISOString(),
+      notice: matched
+        ? "A known threat match was found. Do not open this URL."
+        : "No match was found in the checked threat lists. This does not guarantee that the URL is safe.",
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.error("Threat lookup failed", message, error instanceof Error ? error.stack : "");
+    console.error("Threat lookup failed", message);
     const timedOut = message.toLowerCase().includes("timeout");
     return response({
-      error: timedOut ? "PhishTank request timed out." : "Threat lookup could not be completed.",
-      diagnostic: message.slice(0, 300),
+      error: timedOut ? "Google Web Risk request timed out." : "Threat lookup could not be completed.",
     }, timedOut ? 504 : 502);
   }
 });
