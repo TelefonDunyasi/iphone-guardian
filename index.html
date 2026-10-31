@@ -12,9 +12,9 @@
 </section>
 <section class="hero"><div class="eyebrow">DİJİTAL GÜVENLİK REHBERİN</div><h1 id="headline">iPhone’un için daha güvenli alışkanlıklar.</h1><p id="intro">Kontrol listeni tamamla, güvenlik adımlarını öğren ve ilerlemeni takip et.</p><b id="count">0 / 13 adım tamamlandı</b><div class="progress"><span id="bar"></span></div></section>
 <section class="urlcheck-card" aria-labelledby="urlcheckTitle">
- <div class="eyebrow">YEREL ANALİZ + GOOGLE WEB RISK</div><h3 id="urlcheckTitle">Şüpheli bağlantıyı kontrol et</h3><p>Önce adres yapısı cihazında incelenir. Google Web Risk ile gerçek tehdit listesi sorgusu için hesabınla giriş yapman gerekir; bu sorguda tam URL Google’a gönderilir.</p>
+ <div class="eyebrow">YEREL ANALİZ + PHISHTANK</div><h3 id="urlcheckTitle">Şüpheli bağlantıyı kontrol et</h3><p>Önce adres yapısı cihazında incelenir. İsteğe bağlı PhishTank sorgusu, tam URL'yi oltalama bağlantıları veritabanında kontrol eder. Sorgu için hesap açman gerekmez.</p>
  <form id="urlCheckForm" class="urlcheck-form"><input id="urlCheckInput" class="urlcheck-input" type="url" inputmode="url" autocomplete="url" maxlength="2048" placeholder="https://ornek.com" aria-label="Kontrol edilecek web adresi" required><button id="urlCheckButton" class="urlcheck-submit" type="submit">Bağlantıyı kontrol et</button></form>
- <p id="urlCheckStatus" class="urlcheck-status" role="status" aria-live="polite">Yerel analiz ücretsizdir. Gerçek tehdit listesi sorgusu için giriş gerekir.</p><div id="urlCheckResult" class="urlcheck-result" aria-live="polite"></div><div id="urlThreatResult" class="urlcheck-result" aria-live="polite"></div><p class="urlcheck-meta">Gizlilik: Gerçek tehdit sorgusu seçildiğinde tam URL, Supabase Edge Function üzerinden Google Web Risk’e iletilir. Mesaj analizi ise cihazında kalır. Eşleşme bulunmaması güvenlik garantisi değildir.</p>
+ <p id="urlCheckStatus" class="urlcheck-status" role="status" aria-live="polite">Yerel analiz ücretsizdir. PhishTank sorgusu bağlantı kontrolünü başlattığında çalışır.</p><div id="urlCheckResult" class="urlcheck-result" aria-live="polite"></div><div id="urlThreatResult" class="urlcheck-result" aria-live="polite"></div><p class="urlcheck-meta">Gizlilik: Bağlantı kontrolünü başlattığında tam URL, Supabase Edge Function üzerinden PhishTank'a gönderilir. PhishTank oltalama veritabanıdır; tüm zararlı yazılımları kapsamaz. Eşleşme bulunmaması güvenlik garantisi değildir.</p>
 </section>
 
 <section class="urlcheck-card" id="messageGuard" aria-labelledby="messageGuardTitle">
@@ -50,7 +50,7 @@
 <h3>Güvenlik kontrol listesi</h3><div class="list-tools"><input class="search" id="taskSearch" type="search" placeholder="Kontrol maddelerinde ara…" aria-label="Kontrol maddelerinde ara"><div class="filters" role="group" aria-label="Kontrol listesi filtresi"><button class="filter-btn" data-filter="all" aria-pressed="true">Tümü</button><button class="filter-btn" data-filter="pending" aria-pressed="false">Bekleyenler</button><button class="filter-btn" data-filter="done" aria-pressed="false">Tamamlananlar</button></div><div class="list-summary" id="listSummary" aria-live="polite">13 kontrol maddesi</div></div><div id="tasks" aria-live="polite"></div><button class="btn" id="reset">Listeyi sıfırla</button><h3>Hızlı güvenlik rehberleri</h3><div class="grid">
 <button class="tile" data-guide="privacy">🛡️ <b>Gizlilik ayarları</b><small>Uygulama izinlerini gözden geçir</small></button><button class="tile" data-guide="whatsapp">💬 <b>WhatsApp</b><small>Bağlı cihazlar ve hesap güvenliği</small></button><button class="tile" data-guide="apple">🔐 <b>Apple hesabı</b><small>Parola ve iki faktörlü doğrulama</small></button><button class="tile" data-guide="lost">📍 <b>Kayıp iPhone</b><small>Bul özelliği ve kayıp modu</small></button><button class="tile" data-guide="phishing">🎣 <b>Dolandırıcılık uyarıları</b><small>Şüpheli bağlantıları tanı</small></button><button class="tile" data-guide="report">📄 <b>Güvenlik raporu</b><small>İşaretlediğin adımları özetle</small></button><button class="tile" data-guide="how">ℹ️ <b>Nasıl çalışır?</b><small>Verilerin ve uygulamanın sınırları</small></button><button class="tile" data-guide="safety">🧭 <b>Güvenlik Denetimi</b><small>Paylaşım ve erişimleri gözden geçir</small></button><button class="tile" data-guide="icloud">☁️ <b>iCloud yedekleme</b><small>Yedekleme durumunu kontrol et</small></button><button class="tile" data-guide="profiles">⚙️ <b>Yapılandırma profilleri</b><small>Yüklü profilleri incele</small></button></div>
 <section class="card premium-card"><div class="premium-top"><span class="eyebrow">GUARDIAN PREMIUM · ÖNİZLEME</span><span class="premium-pill">YAKINDA</span></div><h3>Daha bilinçli dijital güvenlik</h3><p>Genişletilmiş rehberler, kişisel kontrol planı ve dışa aktarılabilir raporlar için tasarlanan alan.</p><button class="secondary-btn" id="premiumPreview">Premium önizlemesini gör</button><p class="muted premium-note">Üyelik ve ödeme henüz etkin değil. Bu ekranda ücret alınmaz.</p></section>
-<section class="notice" role="note" aria-label="Uygulamanın sınırları"><strong>⚠️ ÖNEMLİ BİLGİ</strong><p>Bu uygulama iPhone’u arka planda taramaz, WhatsApp mesajlarını okuyamaz ve casus yazılım tespiti yaptığını iddia etmez. Puan yalnızca işaretlediğin rehber adımlarını gösterir; güvenlik garantisi değildir.</p></section><p class="muted" style="text-align:center">iPhone Guardian · Güvenlik rehberi · Yerel URL ve mesaj analizi cihazında yapılır; isteğe bağlı Google Web Risk sorgusunda URL harici servise iletilir.</p></main>
+<section class="notice" role="note" aria-label="Uygulamanın sınırları"><strong>⚠️ ÖNEMLİ BİLGİ</strong><p>Bu uygulama iPhone’u arka planda taramaz, WhatsApp mesajlarını okuyamaz ve casus yazılım tespiti yaptığını iddia etmez. Puan yalnızca işaretlediğin rehber adımlarını gösterir; güvenlik garantisi değildir.</p></section><p class="muted" style="text-align:center">iPhone Guardian · Güvenlik rehberi · Mesaj analizi cihazında yapılır; isteğe bağlı PhishTank sorgusunda tam URL harici servise iletilir.</p></main>
 <div class="modal" id="modal"><div class="sheet"><button class="close" id="close">Kapat ✕</button><h3 id="mt"></h3><div id="mb"></div></div></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./supabase-config.js"></script>
@@ -102,7 +102,7 @@ urlCheckForm.addEventListener("submit",async event=>{
  try{parsed=new URL(raw)}catch{urlCheckMessage("Geçerli bir web adresi gir. Örnek: https://ornek.com");return}
  if(!["http:","https:"].includes(parsed.protocol)||!parsed.hostname){urlCheckMessage("Yalnızca geçerli HTTP veya HTTPS adresleri kontrol edilebilir.");return}
  urlCheckButton.disabled=true;urlCheckButton.textContent="Cihazda inceleniyor…";
- urlCheckMessage("Yerel adres analizi yapılıyor. Giriş yaptıysan ardından Google Web Risk sorgusu da çalıştırılacak.");
+ urlCheckMessage("Yerel adres analizi yapılıyor. Giriş yaptıysan ardından PhishTank sorgusu da çalıştırılacak.");
  try{
   const analysis=analyzeUrlLocally(parsed);
   const status=analysis.score>=50?"danger":analysis.score>0?"review":"no_match";
@@ -137,40 +137,39 @@ urlCheckForm.addEventListener("submit",async event=>{
   const threatBox=el("urlThreatResult");
   threatBox.className="urlcheck-result show neutral";
   threatBox.replaceChildren();
-  if(!authClient||!authUser){
-   const note=document.createElement("p");
-   note.textContent="Gerçek tehdit veritabanı sorgusu için üst bölümden hesabına giriş yap. Yerel analiz yukarıda tamamlandı.";
-   threatBox.appendChild(note);
-   urlCheckMessage("Yerel analiz tamamlandı. Google Web Risk sorgusu için giriş gerekli.");
-  }else{
-   urlCheckMessage("Yerel analiz tamamlandı. Google Web Risk tehdit listeleri sorgulanıyor…");
+  {
+   urlCheckMessage("Yerel analiz tamamlandı. PhishTank oltalama veritabanı sorgulanıyor…");
    const remoteHeading=document.createElement("strong");
-   remoteHeading.textContent="GOOGLE WEB RISK SORGUSU";
+   remoteHeading.textContent="PHISHTANK SORGUSU";
    const remoteText=document.createElement("p");
    remoteText.style.margin="7px 0 0";
    remoteText.textContent="Tehdit veritabanından yanıt bekleniyor…";
    threatBox.append(remoteHeading,remoteText);
    try{
-    const {data,error}=await authClient.functions.invoke("url-threat-check",{body:{url:parsed.href}});
-    if(error||!data||typeof data.matched!=="boolean")throw error||new Error("Geçersiz tehdit servisi yanıtı");
-    threatBox.className="urlcheck-result show "+(data?.matched?"danger":"safe");
+    const {data,error}=await authClient.functions.invoke("phishtank-check",{body:{url:parsed.href}});
+    if(error||!data||typeof data.inDatabase!=="boolean")throw error||new Error("Geçersiz tehdit servisi yanıtı");
+    threatBox.className="urlcheck-result show neutral";
     if(data?.matched){
-     remoteHeading.textContent="TEHDİT VERİTABANINDA EŞLEŞME BULUNDU";
-     const names=(data.threatTypes||[]).map(type=>({MALWARE:"Zararlı yazılım",SOCIAL_ENGINEERING:"Oltalama / sosyal mühendislik",UNWANTED_SOFTWARE:"İstenmeyen yazılım"}[type]||type));
-     remoteText.textContent="Google Web Risk şu risk türlerini bildirdi: "+names.join(", ")+". Bağlantıyı açma; mesajı göndereni bağımsız kanaldan doğrula.";
+     threatBox.className="urlcheck-result show danger";
+     remoteHeading.textContent="PHISHTANK'TA DOĞRULANMIŞ OLTALAMA EŞLEŞMESİ";
+     remoteText.textContent="Bu adres PhishTank'ta doğrulanmış oltalama bağlantısı olarak kayıtlı. Bağlantıyı açma; göndereni bağımsız kanaldan doğrula.";
+    }else if(data.inDatabase){
+     threatBox.className="urlcheck-result show neutral";
+     remoteHeading.textContent="PHISHTANK'TA KAYIT VAR — DOĞRULAMA BELİRSİZ";
+     remoteText.textContent="Bu adres veritabanında bulunuyor ancak doğrulanmış/geçerli durumu kesin değil. Güvenli kabul etme ve bağlantıyı açma.";
     }else{
-     remoteHeading.textContent="GOOGLE WEB RISK LİSTELERİNDE EŞLEŞME YOK";
-     remoteText.textContent="Sorgulanan listelerde şu anda eşleşme bulunmadı. Bu, sitenin kesin güvenli olduğu anlamına gelmez.";
+     remoteHeading.textContent="PHISHTANK'TA EŞLEŞME BULUNAMADI";
+     remoteText.textContent="PhishTank oltalama veritabanında eşleşme bulunmadı. Bu, sitenin kesin güvenli olduğu anlamına gelmez.";
     }
     const sourceNote=document.createElement("p");
     sourceNote.className="urlcheck-meta";
-    sourceNote.textContent="Kaynak: Google Web Risk · Bu sonuç yalnızca sorgu anındaki listeleri yansıtır.";
+    sourceNote.textContent="Kaynak: PhishTank · Yalnızca oltalama kayıtlarını kontrol eder.";
     threatBox.appendChild(sourceNote);
-    urlCheckMessage("Google Web Risk sorgusu tamamlandı.");
+    urlCheckMessage("PhishTank sorgusu tamamlandı.");
    }catch(remoteError){
     threatBox.className="urlcheck-result show neutral";
     remoteHeading.textContent="GERÇEK TEHDİT SORGUSU TAMAMLANAMADI";
-    remoteText.textContent="Bağlantı yerel olarak incelendi ancak Google Web Risk yanıt vermedi. Servis kurulumu, oturum ve API ayarları kontrol edilmeli; bu sonuç güvenli olarak yorumlanmamalı.";
+    remoteText.textContent="Bağlantı yerel olarak incelendi ancak PhishTank yanıt vermedi. Servis kurulumu, oturum ve API ayarları kontrol edilmeli; bu sonuç güvenli olarak yorumlanmamalı.";
     urlCheckMessage("Yerel analiz tamamlandı; gerçek tehdit sorgusu şu anda kullanılamıyor.");
    }
   }
