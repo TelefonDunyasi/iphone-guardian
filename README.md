@@ -8,7 +8,7 @@ iPhone Guardian, iPhone kullanıcıları için Türkçe hazırlanmış, Safari �
 - İsteğe bağlı Supabase hesabı ve kullanıcının kendi ilerlemesini buluta eşitleme.
 - Apple Account, WhatsApp, gizlilik, kayıp cihaz hazırlığı, iCloud yedekleme, Security Checkup ve yapılandırma profilleri için pratik rehberler.
 - Paylaşılabilir kontrol listesi raporu.
-- Cihaz içinde çalışan adres biçimi analizi ve ücretsiz Guardian hesabıyla giriş yapıldığında Supabase `smooth-responder` Edge Function üzerinden OpenPhish Community Feed üzerinden tam URL oltalama listesi eşleşmesi (tam URL, kullanıcı kontrolü başlattığında OpenPhish listesiyle karşılaştırılır).
+- Cihaz içinde çalışan adres biçimi analizi ve ücretsiz Guardian hesabıyla giriş yapıldığında Supabase `smooth-responder` Edge Function üzerinden OpenPhish Community Feed ile tam URL oltalama listesi eşleşmesi (tam URL, kullanıcı kontrolü başlattığında listeyle karşılaştırılır).
 - SMS/WhatsApp/e-posta metinleri için cihaz içinde çalışan sezgisel dolandırıcılık işaretleri analizi.
 - Apple App Store kataloğundan uygulama adı, geliştirici, kategori, yaş derecesi ve puan gibi herkese açık mağaza bilgilerinin görüntülenmesi.
 
