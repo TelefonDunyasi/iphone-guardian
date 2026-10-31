@@ -17,7 +17,7 @@ index_path = ROOT / "index.html"
 manifest_path = ROOT / "manifest.webmanifest"
 worker_path = ROOT / "sw.js"
 native_path = ROOT / "ios/Sources/iPhoneGuardianApp.swift"
-threat_function_path = ROOT / "supabase/functions/url-threat-check/index.ts"
+threat_function_path = ROOT / "supabase/functions/phishtank-check/index.ts"
 
 for path in (index_path, manifest_path, worker_path, native_path, threat_function_path):
     require(path.is_file(), f"Required file is missing: {path.relative_to(ROOT)}")
@@ -32,7 +32,7 @@ if index_path.is_file():
         require((f'id="{element_id}"' in html) or (f"id='{element_id}'" in html),
                 f"Missing required PWA element: #{element_id}")
 
-    for feature in ("analyzeUrlLocally", "Mesajı analiz et", "Apple App Store", "url-threat-check", "Google Web Risk"):
+    for feature in ("analyzeUrlLocally", "Mesajı analiz et", "Apple App Store", "phishtank-check", "PhishTank"):
         require(feature.casefold() in html.casefold(),
                 f"Missing expected PWA feature text/code: {feature}")
 
@@ -86,19 +86,18 @@ if worker_path.is_file():
 if threat_function_path.is_file():
     threat_function = threat_function_path.read_text(encoding="utf-8")
     for marker in (
-        "GOOGLE_WEBRISK_API_KEY",
-        "webrisk.googleapis.com/v1/uris:search",
-        "MALWARE",
-        "SOCIAL_ENGINEERING",
-        "UNWANTED_SOFTWARE",
+        "PHISHTANK_APP_KEY",
+        "https://checkurl.phishtank.com/checkurl/",
+        "format",
         "parsed.username || parsed.password",
+        "iPhoneGuardian/1.0",
     ):
         require(marker in threat_function,
-                f"Google Web Risk function is missing required protection or lookup marker: {marker}")
+                f"PhishTank function is missing required protection or lookup marker: {marker}")
     require("Access-Control-Allow-Origin" in threat_function,
             "Threat lookup function must define its CORS origin.")
-    require("response.status === 403 ? 503 : 502" in threat_function,
-            "Threat lookup function should avoid exposing upstream API errors.")
+    require("response.status === 509" in threat_function,
+            "PhishTank function should handle provider rate limiting.")
     require("console.log" not in threat_function and "console.error" not in threat_function,
             "Threat lookup function must not log submitted URLs or upstream secrets.")
 
