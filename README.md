@@ -8,7 +8,7 @@ iPhone Guardian, iPhone kullanıcıları için Türkçe hazırlanmış, Safari �
 - İsteğe bağlı Supabase hesabı ve kullanıcının kendi ilerlemesini buluta eşitleme.
 - Apple Account, WhatsApp, gizlilik, kayıp cihaz hazırlığı, iCloud yedekleme, Security Checkup ve yapılandırma profilleri için pratik rehberler.
 - Paylaşılabilir kontrol listesi raporu.
-- Cihaz içinde çalışan adres biçimi analizi ve Supabase Edge Function dağıtıldığında isteğe bağlı PhishTank oltalama veritabanı sorgusu (tam URL, kullanıcı kontrolü başlattığında PhishTank'a gönderilir).
+- Cihaz içinde çalışan adres biçimi analizi ve ücretsiz Guardian hesabıyla giriş yapıldığında Supabase `smooth-responder` Edge Function üzerinden PhishTank oltalama veritabanı sorgusu (tam URL, kullanıcı kontrolü başlattığında PhishTank'a gönderilir).
 - SMS/WhatsApp/e-posta metinleri için cihaz içinde çalışan sezgisel dolandırıcılık işaretleri analizi.
 - Apple App Store kataloğundan uygulama adı, geliştirici, kategori, yaş derecesi ve puan gibi herkese açık mağaza bilgilerinin görüntülenmesi.
 
@@ -24,7 +24,7 @@ GitHub Pages, `main` dalının kök klasörünü yayınlar. Uygulamanın giriş 
 
 Supabase Auth ve `guardian_progress` tablosu kurulumu için [AUTH_SETUP.md](AUTH_SETUP.md) dosyasına bak. Tarayıcıda yalnızca proje URL'si ve public anon/publishable key bulunmalıdır. Service-role/secret key hiçbir zaman HTML veya GitHub'a eklenmemelidir. İlerleme tablosunda Row Level Security (RLS) açık tutulmalıdır.
 
-PhishTank sorgusu Supabase Edge Function üzerinden yapılır. Ücretsiz API anahtarı isteğe bağlıdır; anahtarsız kullanım daha düşük istek sınırına tabi olabilir. Eski Google Web Risk Edge Function dosyası depoda kalabilir ancak web uygulaması onu çağırmaz.
+PhishTank sorgusu `supabase/functions/smooth-responder/index.ts` üzerinden yapılır. Supabase Dashboard'da mevcut `smooth-responder` fonksiyonuna bu dosyanın içeriğini dağıt. PhishTank uygulama anahtarı isteğe bağlıdır; anahtarsız kullanım daha düşük istek sınırına tabi olabilir. Google Web Risk faturalandırması bu sürüm için gerekli değildir.
 
 ## Güvenlik ve gizlilik sınırları
 
