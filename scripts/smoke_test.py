@@ -28,7 +28,7 @@ if index_path.is_file():
         "tasks", "authForm", "dashReport",
     )
     for element_id in required_ids:
-        require(re.search(r'\\bid=["\\']' + re.escape(element_id) + r'["\\']', html) is not None,
+        require((f'id="{element_id}"' in html) or (f"id='{element_id}'" in html),
                 f"Missing required PWA element: #{element_id}")
 
     for feature in ("analyzeUrlLocally", "Mesajı analiz et", "Apple App Store"):
