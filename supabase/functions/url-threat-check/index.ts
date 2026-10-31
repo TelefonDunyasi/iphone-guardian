@@ -13,7 +13,7 @@ function json(status: number, body: Record<string, unknown>) {
 function isPrivateOrLocalHost(hostname: string): boolean {
   const host = hostname.toLowerCase().replace(/^\[|\]$/g, "");
   if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".local") ||
-      host.endsWith(".internal") || host === "::1" || host === "0.0.0.0") return true;
+      host.endsWith(".internal") || host.includes(":") || host === "0.0.0.0") return true;
   const parts = host.split(".");
   if (parts.length !== 4 || !parts.every(part => /^\d{1,3}$/.test(part) && Number(part) <= 255)) return false;
   const [a, b] = parts.map(Number);
