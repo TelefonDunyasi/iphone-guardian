@@ -8,7 +8,7 @@ iPhone Guardian, iPhone kullanıcıları için Türkçe hazırlanmış, Safari �
 - İsteğe bağlı Supabase hesabı ve kullanıcının kendi ilerlemesini buluta eşitleme.
 - Apple Account, WhatsApp, gizlilik, kayıp cihaz hazırlığı, iCloud yedekleme, Security Checkup ve yapılandırma profilleri için pratik rehberler.
 - Paylaşılabilir kontrol listesi raporu.
-- Ücretsiz, cihaz içinde çalışan bağlantı adresi analizi. URL harici bir güvenlik servisine gönderilmez.
+- Cihaz içinde çalışan adres biçimi analizi ve yapılandırıldığında Google Web Risk üzerinden gerçek zamanlı URL tehdit listesi sorgusu (giriş gerektirir; sorgulanan URL Google'a gönderilir).
 - SMS/WhatsApp/e-posta metinleri için cihaz içinde çalışan sezgisel dolandırıcılık işaretleri analizi.
 - Apple App Store kataloğundan uygulama adı, geliştirici, kategori, yaş derecesi ve puan gibi herkese açık mağaza bilgilerinin görüntülenmesi.
 
