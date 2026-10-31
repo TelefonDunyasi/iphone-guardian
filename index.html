@@ -12,9 +12,9 @@
 </section>
 <section class="hero"><div class="eyebrow">DİJİTAL GÜVENLİK REHBERİN</div><h1 id="headline">iPhone’un için daha güvenli alışkanlıklar.</h1><p id="intro">Kontrol listeni tamamla, güvenlik adımlarını öğren ve ilerlemeni takip et.</p><b id="count">0 / 13 adım tamamlandı</b><div class="progress"><span id="bar"></span></div></section>
 <section class="urlcheck-card" aria-labelledby="urlcheckTitle">
- <div class="eyebrow">YEREL ANALİZ + PHISHTANK</div><h3 id="urlcheckTitle">Şüpheli bağlantıyı kontrol et</h3><p>Önce adres yapısı cihazında incelenir. İsteğe bağlı PhishTank sorgusu, tam URL'yi oltalama bağlantıları veritabanında kontrol eder. Sorgu için hesap açman gerekmez.</p>
+ <div class="eyebrow">YEREL ANALİZ + PHISHTANK</div><h3 id="urlcheckTitle">Şüpheli bağlantıyı kontrol et</h3><p>Önce adres yapısı cihazında incelenir. Giriş yaptığında PhishTank sorgusu tam URL'yi oltalama bağlantıları veritabanında kontrol eder. Ücretsiz Guardian hesabı gerekir.</p>
  <form id="urlCheckForm" class="urlcheck-form"><input id="urlCheckInput" class="urlcheck-input" type="url" inputmode="url" autocomplete="url" maxlength="2048" placeholder="https://ornek.com" aria-label="Kontrol edilecek web adresi" required><button id="urlCheckButton" class="urlcheck-submit" type="submit">Bağlantıyı kontrol et</button></form>
- <p id="urlCheckStatus" class="urlcheck-status" role="status" aria-live="polite">Yerel analiz ücretsizdir. PhishTank sorgusu bağlantı kontrolünü başlattığında çalışır.</p><div id="urlCheckResult" class="urlcheck-result" aria-live="polite"></div><div id="urlThreatResult" class="urlcheck-result" aria-live="polite"></div><p class="urlcheck-meta">Gizlilik: Bağlantı kontrolünü başlattığında tam URL, Supabase Edge Function üzerinden PhishTank'a gönderilir. PhishTank oltalama veritabanıdır; tüm zararlı yazılımları kapsamaz. Eşleşme bulunmaması güvenlik garantisi değildir.</p>
+ <p id="urlCheckStatus" class="urlcheck-status" role="status" aria-live="polite">Yerel analiz ücretsizdir. PhishTank canlı sorgusu için ücretsiz Guardian hesabına giriş yap.</p><div id="urlCheckResult" class="urlcheck-result" aria-live="polite"></div><div id="urlThreatResult" class="urlcheck-result" aria-live="polite"></div><p class="urlcheck-meta">Gizlilik: Bağlantı kontrolünü başlattığında tam URL, Supabase Edge Function üzerinden PhishTank'a gönderilir. PhishTank oltalama veritabanıdır; tüm zararlı yazılımları kapsamaz. Eşleşme bulunmaması güvenlik garantisi değildir.</p>
 </section>
 
 <section class="urlcheck-card" id="messageGuard" aria-labelledby="messageGuardTitle">
@@ -138,39 +138,45 @@ urlCheckForm.addEventListener("submit",async event=>{
   threatBox.className="urlcheck-result show neutral";
   threatBox.replaceChildren();
   {
-   urlCheckMessage("Yerel analiz tamamlandı. PhishTank oltalama veritabanı sorgulanıyor…");
    const remoteHeading=document.createElement("strong");
-   remoteHeading.textContent="PHISHTANK SORGUSU";
    const remoteText=document.createElement("p");
    remoteText.style.margin="7px 0 0";
-   remoteText.textContent="Tehdit veritabanından yanıt bekleniyor…";
    threatBox.append(remoteHeading,remoteText);
-   try{
-    const {data,error}=await authClient.functions.invoke("phishtank-check",{body:{url:parsed.href}});
-    if(error||!data||typeof data.inDatabase!=="boolean")throw error||new Error("Geçersiz tehdit servisi yanıtı");
+   if(!authUser){
     threatBox.className="urlcheck-result show neutral";
-    if(data?.matched){
-     threatBox.className="urlcheck-result show danger";
-     remoteHeading.textContent="PHISHTANK'TA DOĞRULANMIŞ OLTALAMA EŞLEŞMESİ";
-     remoteText.textContent="Bu adres PhishTank'ta doğrulanmış oltalama bağlantısı olarak kayıtlı. Bağlantıyı açma; göndereni bağımsız kanaldan doğrula.";
-    }else if(data.inDatabase){
+    remoteHeading.textContent="CANLI TEHDİT SORGUSU İÇİN GİRİŞ GEREKLİ";
+    remoteText.textContent="Yerel analiz tamamlandı. PhishTank veritabanını sorgulamak için ücretsiz Guardian hesabına giriş yap.";
+    urlCheckMessage("Yerel analiz tamamlandı. Canlı PhishTank kontrolü için giriş yapmalısın.");
+   }else{
+    urlCheckMessage("Yerel analiz tamamlandı. PhishTank oltalama veritabanı sorgulanıyor…");
+    remoteHeading.textContent="PHISHTANK SORGUSU";
+    remoteText.textContent="Tehdit veritabanından yanıt bekleniyor…";
+    try{
+     const {data,error}=await authClient.functions.invoke("smooth-responder",{body:{url:parsed.href}});
+     if(error||!data||typeof data.inDatabase!=="boolean")throw error||new Error("Geçersiz tehdit servisi yanıtı");
      threatBox.className="urlcheck-result show neutral";
-     remoteHeading.textContent="PHISHTANK'TA KAYIT VAR — DOĞRULAMA BELİRSİZ";
-     remoteText.textContent="Bu adres veritabanında bulunuyor ancak doğrulanmış/geçerli durumu kesin değil. Güvenli kabul etme ve bağlantıyı açma.";
-    }else{
-     remoteHeading.textContent="PHISHTANK'TA EŞLEŞME BULUNAMADI";
-     remoteText.textContent="PhishTank oltalama veritabanında eşleşme bulunmadı. Bu, sitenin kesin güvenli olduğu anlamına gelmez.";
+     if(data.matched){
+      threatBox.className="urlcheck-result show danger";
+      remoteHeading.textContent="PHISHTANK'TA DOĞRULANMIŞ OLTALAMA EŞLEŞMESİ";
+      remoteText.textContent="Bu adres PhishTank'ta doğrulanmış ve geçerli oltalama bağlantısı olarak kayıtlı. Bağlantıyı açma; göndereni bağımsız kanaldan doğrula.";
+     }else if(data.inDatabase){
+      remoteHeading.textContent="PHISHTANK'TA KAYIT VAR — DOĞRULAMA BELİRSİZ";
+      remoteText.textContent="Bu adres veritabanında bulunuyor ancak doğrulanmış ve geçerli bir oltalama kaydı olduğu kesin değil. Güvenli kabul etme.";
+     }else{
+      remoteHeading.textContent="PHISHTANK'TA EŞLEŞME BULUNAMADI";
+      remoteText.textContent="PhishTank oltalama veritabanında eşleşme bulunmadı. Bu, sitenin kesin güvenli olduğu anlamına gelmez.";
+     }
+     const sourceNote=document.createElement("p");
+     sourceNote.className="urlcheck-meta";
+     sourceNote.textContent="Kaynak: PhishTank · Oltalama veritabanı; zararlı yazılım taraması değildir.";
+     threatBox.appendChild(sourceNote);
+     urlCheckMessage("PhishTank sorgusu tamamlandı.");
+    }catch(remoteError){
+     threatBox.className="urlcheck-result show neutral";
+     remoteHeading.textContent="GERÇEK TEHDİT SORGUSU TAMAMLANAMADI";
+     remoteText.textContent="Yerel analiz tamamlandı ancak PhishTank yanıt vermedi. Sonuç güvenli olarak yorumlanmamalı.";
+     urlCheckMessage("Yerel analiz tamamlandı; gerçek tehdit sorgusu şu anda kullanılamıyor.");
     }
-    const sourceNote=document.createElement("p");
-    sourceNote.className="urlcheck-meta";
-    sourceNote.textContent="Kaynak: PhishTank · Yalnızca oltalama kayıtlarını kontrol eder.";
-    threatBox.appendChild(sourceNote);
-    urlCheckMessage("PhishTank sorgusu tamamlandı.");
-   }catch(remoteError){
-    threatBox.className="urlcheck-result show neutral";
-    remoteHeading.textContent="GERÇEK TEHDİT SORGUSU TAMAMLANAMADI";
-    remoteText.textContent="Bağlantı yerel olarak incelendi ancak PhishTank yanıt vermedi. Supabase Edge Function dağıtımı veya istek sınırı kontrol edilmeli; bu sonuç güvenli olarak yorumlanmamalı.";
-    urlCheckMessage("Yerel analiz tamamlandı; gerçek tehdit sorgusu şu anda kullanılamıyor.");
    }
   }
  }catch(error){
