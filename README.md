@@ -8,7 +8,7 @@ iPhone Guardian, iPhone kullanıcıları için Türkçe hazırlanmış, Safari �
 - İsteğe bağlı Supabase hesabı ve kullanıcının kendi ilerlemesini buluta eşitleme.
 - Apple Account, WhatsApp, gizlilik, kayıp cihaz hazırlığı, iCloud yedekleme, Security Checkup ve yapılandırma profilleri için pratik rehberler.
 - Paylaşılabilir kontrol listesi raporu.
-- Cihaz içinde çalışan adres biçimi analizi ve yapılandırıldığında PhishTank oltalama veritabanı sorgusu (tam URL, kontrol başlatıldığında PhishTank'a gönderilir).
+- Cihaz içinde çalışan adres biçimi analizi ve Supabase Edge Function dağıtıldığında isteğe bağlı PhishTank oltalama veritabanı sorgusu (tam URL, kullanıcı kontrolü başlattığında PhishTank'a gönderilir).
 - SMS/WhatsApp/e-posta metinleri için cihaz içinde çalışan sezgisel dolandırıcılık işaretleri analizi.
 - Apple App Store kataloğundan uygulama adı, geliştirici, kategori, yaş derecesi ve puan gibi herkese açık mağaza bilgilerinin görüntülenmesi.
 
@@ -30,7 +30,7 @@ PhishTank sorgusu Supabase Edge Function üzerinden yapılır. Ücretsiz API ana
 
 - Bu ürün yerel bir web uygulamasıdır; yerel iPhone uygulaması veya native iOS antivirüsü değildir.
 - iPhone'u arka planda tarayamaz, başka uygulamaların dosyalarını/izinlerini inceleyemez, WhatsApp mesajlarını okuyamaz ve casus yazılım tespit ettiğini iddia edemez.
-- Bağlantı kontrolü yalnızca URL'nin biçimsel özelliklerinde bazı risk işaretlerini arar. Bilinen zararlı URL/oltalama listelerini, sayfa içeriğini veya indirilen dosyaları taramaz. Risk işareti bulunmaması güvenlik garantisi değildir.
+- Bağlantı kontrolü yerel URL biçim işaretlerini arar; Edge Function dağıtıldığında PhishTank'ın doğrulanmış oltalama kayıtlarıyla da karşılaştırır. Bu hizmet tüm zararlı URL'leri, zararlı yazılımları, sayfa içeriğini veya indirilen dosyaları taramaz. Eşleşme bulunmaması güvenlik garantisi değildir.
 - Mesaj analizi sezgisel metin kalıplarına dayanır; her dolandırıcılığı tespit edemez. Mesaj metni analiz için sunucuya gönderilmez.
 - App Store danışmanı Apple'ın herkese açık katalog verisini gösterir; uygulama paketini, kodunu, davranışını veya cihazdaki yüklü uygulamaları incelemez.
 - Kontrol listesi puanı yalnızca kullanıcının işaretlediği rehber maddelerini yansıtır; teknik cihaz taraması değildir.
