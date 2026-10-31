@@ -8,7 +8,7 @@ iPhone Guardian, iPhone kullanıcıları için Türkçe hazırlanmış, Safari �
 - İsteğe bağlı Supabase hesabı ve kullanıcının kendi ilerlemesini buluta eşitleme.
 - Apple Account, WhatsApp, gizlilik, kayıp cihaz hazırlığı, iCloud yedekleme, Security Checkup ve yapılandırma profilleri için pratik rehberler.
 - Paylaşılabilir kontrol listesi raporu.
-- Cihaz içinde çalışan adres biçimi analizi ve yapılandırıldığında Google Web Risk üzerinden gerçek zamanlı URL tehdit listesi sorgusu (giriş gerektirir; sorgulanan URL Google'a gönderilir).
+- Cihaz içinde çalışan adres biçimi analizi ve yapılandırıldığında PhishTank oltalama veritabanı sorgusu (tam URL, kontrol başlatıldığında PhishTank'a gönderilir).
 - SMS/WhatsApp/e-posta metinleri için cihaz içinde çalışan sezgisel dolandırıcılık işaretleri analizi.
 - Apple App Store kataloğundan uygulama adı, geliştirici, kategori, yaş derecesi ve puan gibi herkese açık mağaza bilgilerinin görüntülenmesi.
 
@@ -24,7 +24,7 @@ GitHub Pages, `main` dalının kök klasörünü yayınlar. Uygulamanın giriş 
 
 Supabase Auth ve `guardian_progress` tablosu kurulumu için [AUTH_SETUP.md](AUTH_SETUP.md) dosyasına bak. Tarayıcıda yalnızca proje URL'si ve public anon/publishable key bulunmalıdır. Service-role/secret key hiçbir zaman HTML veya GitHub'a eklenmemelidir. İlerleme tablosunda Row Level Security (RLS) açık tutulmalıdır.
 
-URL kontrolü artık Supabase Edge Function, Google Web Risk, PhishTank veya ücretli bir güvenlik API'si çağırmaz. Google Cloud faturalandırması veya API anahtarı gerekmez. Eski Edge Function dosyaları depoda kalmış olabilir; mevcut web uygulaması bunları çağırmaz.
+PhishTank sorgusu Supabase Edge Function üzerinden yapılır. Ücretsiz API anahtarı isteğe bağlıdır; anahtarsız kullanım daha düşük istek sınırına tabi olabilir. Eski Google Web Risk Edge Function dosyası depoda kalabilir ancak web uygulaması onu çağırmaz.
 
 ## Güvenlik ve gizlilik sınırları
 
