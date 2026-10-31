@@ -12,9 +12,9 @@
 </section>
 <section class="hero"><div class="eyebrow">DİJİTAL GÜVENLİK REHBERİN</div><h1 id="headline">iPhone’un için daha güvenli alışkanlıklar.</h1><p id="intro">Kontrol listeni tamamla, güvenlik adımlarını öğren ve ilerlemeni takip et.</p><b id="count">0 / 13 adım tamamlandı</b><div class="progress"><span id="bar"></span></div></section>
 <section class="urlcheck-card" aria-labelledby="urlcheckTitle">
- <div class="eyebrow">GUARD ÜCRETSİZ YEREL BAĞLANTI ANALİZİ</div><h3 id="urlcheckTitle">Şüpheli bağlantıyı kontrol et</h3><p>Bağlantının adres yapısını ücretsiz olarak bu cihazda inceler. URL herhangi bir güvenlik servisine veya sunucuya gönderilmez.</p>
+ <div class="eyebrow">YEREL ANALİZ + GOOGLE WEB RISK</div><h3 id="urlcheckTitle">Şüpheli bağlantıyı kontrol et</h3><p>Önce adres yapısı cihazında incelenir. Google Web Risk ile gerçek tehdit listesi sorgusu için hesabınla giriş yapman gerekir; bu sorguda tam URL Google’a gönderilir.</p>
  <form id="urlCheckForm" class="urlcheck-form"><input id="urlCheckInput" class="urlcheck-input" type="url" inputmode="url" autocomplete="url" maxlength="2048" placeholder="https://ornek.com" aria-label="Kontrol edilecek web adresi" required><button id="urlCheckButton" class="urlcheck-submit" type="submit">Bağlantıyı kontrol et</button></form>
- <p id="urlCheckStatus" class="urlcheck-status" role="status" aria-live="polite">Ücretsiz bağlantı kontrolü giriş gerektirmez.</p><div id="urlCheckResult" class="urlcheck-result" aria-live="polite"></div><p class="urlcheck-meta">Önemli: Bu ücretsiz kontrol yalnızca adres yapısındaki bazı risk işaretlerini arar. Dış tehdit veritabanlarını, sitenin içeriğini veya dosyalarını taramaz; güvenlik garantisi değildir.</p>
+ <p id="urlCheckStatus" class="urlcheck-status" role="status" aria-live="polite">Yerel analiz ücretsizdir. Gerçek tehdit listesi sorgusu için giriş gerekir.</p><div id="urlCheckResult" class="urlcheck-result" aria-live="polite"></div><div id="urlThreatResult" class="urlcheck-result" aria-live="polite"></div><p class="urlcheck-meta">Gizlilik: Gerçek tehdit sorgusu seçildiğinde tam URL, Supabase Edge Function üzerinden Google Web Risk’e iletilir. Mesaj analizi ise cihazında kalır. Eşleşme bulunmaması güvenlik garantisi değildir.</p>
 </section>
 
 <section class="urlcheck-card" id="messageGuard" aria-labelledby="messageGuardTitle">
@@ -95,14 +95,14 @@ function analyzeUrlLocally(parsed){
  if(!risks.length)risks.push("Bu hızlı yerel kontrolde belirgin adres-yapısı risk işareti bulunmadı.");
  return {score:Math.min(score,100),risks};
 }
-urlCheckForm.addEventListener("submit",event=>{
+urlCheckForm.addEventListener("submit",async event=>{
  event.preventDefault();
  urlCheckResult.className="urlcheck-result";urlCheckResult.replaceChildren();
  const raw=urlCheckInput.value.trim();let parsed;
  try{parsed=new URL(raw)}catch{urlCheckMessage("Geçerli bir web adresi gir. Örnek: https://ornek.com");return}
  if(!["http:","https:"].includes(parsed.protocol)||!parsed.hostname){urlCheckMessage("Yalnızca geçerli HTTP veya HTTPS adresleri kontrol edilebilir.");return}
  urlCheckButton.disabled=true;urlCheckButton.textContent="Cihazda inceleniyor…";
- urlCheckMessage("Bağlantı yalnızca bu cihazda inceleniyor; herhangi bir güvenlik servisine gönderilmiyor.");
+ urlCheckMessage("Yerel adres analizi yapılıyor. Giriş yaptıysan ardından Google Web Risk sorgusu da çalıştırılacak.");
  try{
   const analysis=analyzeUrlLocally(parsed);
   const status=analysis.score>=50?"danger":analysis.score>0?"review":"no_match";
@@ -129,11 +129,51 @@ urlCheckForm.addEventListener("submit",event=>{
   analysis.risks.forEach(risk=>{const item=document.createElement("li");item.textContent=risk;list.appendChild(item)});
   urlCheckResult.appendChild(list);
   const meta=document.createElement("div");meta.className="urlcheck-meta";
-  meta.textContent="Ücretsiz cihaz içi analiz · Yerel işaret puanı: "+analysis.score+"/100 · URL sunucuya gönderilmedi.";
+  meta.textContent="Cihaz içi adres analizi · Yerel işaret puanı: "+analysis.score+"/100.";
   urlCheckResult.appendChild(meta);
   const disclaimer=document.createElement("p");disclaimer.className="urlcheck-meta";
   disclaimer.textContent="Sınır: Bu özellik dış tehdit listelerini sorgulamaz, sitenin içeriğini veya dosyalarını taramaz. Hiçbir eşleşme/işaret bulunmaması güvenlik garantisi değildir.";
   urlCheckResult.appendChild(disclaimer);
+  const threatBox=el("urlThreatResult");
+  threatBox.className="urlcheck-result show neutral";
+  threatBox.replaceChildren();
+  if(!authClient||!authUser){
+   const note=document.createElement("p");
+   note.textContent="Gerçek tehdit veritabanı sorgusu için üst bölümden hesabına giriş yap. Yerel analiz yukarıda tamamlandı.";
+   threatBox.appendChild(note);
+   urlCheckMessage("Yerel analiz tamamlandı. Google Web Risk sorgusu için giriş gerekli.");
+  }else{
+   urlCheckMessage("Yerel analiz tamamlandı. Google Web Risk tehdit listeleri sorgulanıyor…");
+   const remoteHeading=document.createElement("strong");
+   remoteHeading.textContent="GOOGLE WEB RISK SORGUSU";
+   const remoteText=document.createElement("p");
+   remoteText.style.margin="7px 0 0";
+   remoteText.textContent="Tehdit veritabanından yanıt bekleniyor…";
+   threatBox.append(remoteHeading,remoteText);
+   try{
+    const {data,error}=await authClient.functions.invoke("url-threat-check",{body:{url:parsed.href}});
+    if(error)throw error;
+    threatBox.className="urlcheck-result show "+(data?.matched?"danger":"safe");
+    if(data?.matched){
+     remoteHeading.textContent="TEHDİT VERİTABANINDA EŞLEŞME BULUNDU";
+     const names=(data.threatTypes||[]).map(type=>({MALWARE:"Zararlı yazılım",SOCIAL_ENGINEERING:"Oltalama / sosyal mühendislik",UNWANTED_SOFTWARE:"İstenmeyen yazılım"}[type]||type));
+     remoteText.textContent="Google Web Risk şu risk türlerini bildirdi: "+names.join(", ")+". Bağlantıyı açma; mesajı göndereni bağımsız kanaldan doğrula.";
+    }else{
+     remoteHeading.textContent="GOOGLE WEB RISK LİSTELERİNDE EŞLEŞME YOK";
+     remoteText.textContent="Sorgulanan listelerde şu anda eşleşme bulunmadı. Bu, sitenin kesin güvenli olduğu anlamına gelmez.";
+    }
+    const sourceNote=document.createElement("p");
+    sourceNote.className="urlcheck-meta";
+    sourceNote.textContent="Kaynak: Google Web Risk · Bu sonuç yalnızca sorgu anındaki listeleri yansıtır.";
+    threatBox.appendChild(sourceNote);
+    urlCheckMessage("Google Web Risk sorgusu tamamlandı.");
+   }catch(remoteError){
+    threatBox.className="urlcheck-result show neutral";
+    remoteHeading.textContent="GERÇEK TEHDİT SORGUSU TAMAMLANAMADI";
+    remoteText.textContent="Bağlantı yerel olarak incelendi ancak Google Web Risk yanıt vermedi. Servis kurulumu, oturum ve API ayarları kontrol edilmeli; bu sonuç güvenli olarak yorumlanmamalı.";
+    urlCheckMessage("Yerel analiz tamamlandı; gerçek tehdit sorgusu şu anda kullanılamıyor.");
+   }
+  }
  }catch(error){
   urlCheckResult.className="urlcheck-result show neutral";
   urlCheckResult.textContent="Yerel kontrol tamamlanamadı. Adresi yeniden kontrol edip dene.";
