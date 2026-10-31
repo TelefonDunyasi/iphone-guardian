@@ -169,7 +169,7 @@ urlCheckForm.addEventListener("submit",async event=>{
    }catch(remoteError){
     threatBox.className="urlcheck-result show neutral";
     remoteHeading.textContent="GERÇEK TEHDİT SORGUSU TAMAMLANAMADI";
-    remoteText.textContent="Bağlantı yerel olarak incelendi ancak PhishTank yanıt vermedi. Servis kurulumu, oturum ve API ayarları kontrol edilmeli; bu sonuç güvenli olarak yorumlanmamalı.";
+    remoteText.textContent="Bağlantı yerel olarak incelendi ancak PhishTank yanıt vermedi. Supabase Edge Function dağıtımı veya istek sınırı kontrol edilmeli; bu sonuç güvenli olarak yorumlanmamalı.";
     urlCheckMessage("Yerel analiz tamamlandı; gerçek tehdit sorgusu şu anda kullanılamıyor.");
    }
   }
